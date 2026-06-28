@@ -1,0 +1,1516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Geotech Field Calculator</title>
+<style>
+:root {
+  --bg:#f5f4f0;--surface:#fff;--border:#d0cec8;--text:#1a1a18;--muted:#6b6860;
+  --accent:#2d5a3d;--al:#e8f0eb;--inp:#fafaf8;--wb:#fdf8ee;--wbb:#e0cc88;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:Georgia,serif;background:var(--bg);color:var(--text);min-height:100vh;}
+header{background:var(--accent);color:#fff;padding:12px 18px 10px;border-bottom:3px solid #1e3d2a;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;}
+header h1{font-size:1rem;font-weight:normal;letter-spacing:.05em;text-transform:uppercase;}
+header p{font-size:.72rem;opacity:.6;margin-top:2px;font-family:'Courier New',monospace;}
+.unit-toggle{display:flex;background:#1e3d2a;border-radius:3px;overflow:hidden;flex-shrink:0;}
+.unit-toggle button{padding:5px 12px;font-size:.72rem;font-family:'Courier New',monospace;letter-spacing:.04em;border:none;cursor:pointer;background:transparent;color:rgba(255,255,255,.55);transition:all .15s;}
+.unit-toggle button.active{background:#fff;color:var(--accent);font-weight:bold;}
+.tab-bar{display:flex;overflow-x:auto;background:#1e3d2a;scrollbar-width:none;}
+.tab-bar::-webkit-scrollbar{display:none;}
+.tab{flex:0 0 auto;padding:9px 14px;font-size:.75rem;font-family:'Courier New',monospace;color:rgba(255,255,255,.5);cursor:pointer;border:none;background:transparent;white-space:nowrap;border-bottom:3px solid transparent;transition:all .15s;}
+.tab.active{color:#fff;border-bottom-color:#7dbf8e;background:rgba(255,255,255,.06);}
+.tab:hover:not(.active){color:rgba(255,255,255,.85);}
+.panel{display:none;padding:16px;max-width:640px;}
+.panel.active{display:block;}
+.cs{background:var(--surface);border:1px solid var(--border);border-radius:3px;margin-bottom:14px;overflow:hidden;}
+.csh{padding:8px 13px;background:var(--al);border-bottom:1px solid var(--border);font-size:.74rem;font-family:'Courier New',monospace;color:var(--accent);letter-spacing:.05em;text-transform:uppercase;}
+.ref-tag{float:right;font-size:.67rem;opacity:.65;font-style:italic;letter-spacing:0;text-transform:none;}
+.cb{padding:13px;}
+.fr{display:flex;align-items:center;gap:7px;margin-bottom:8px;}
+label{font-size:.8rem;color:var(--muted);min-width:160px;flex-shrink:0;line-height:1.3;}
+label span{display:block;font-family:'Courier New',monospace;font-size:.68rem;color:#aaa;}
+input[type=number],select{flex:1;padding:6px 8px;border:1px solid var(--border);border-radius:3px;background:var(--inp);font-size:.84rem;font-family:'Courier New',monospace;color:var(--text);min-width:0;}
+input[type=number]:focus,select:focus{outline:2px solid var(--accent);outline-offset:-1px;}
+.ul{font-size:.74rem;font-family:'Courier New',monospace;color:var(--muted);min-width:38px;}
+.br{display:flex;gap:7px;margin-top:6px;flex-wrap:wrap;}
+.btn{padding:7px 16px;background:var(--accent);color:#fff;border:none;border-radius:3px;font-size:.78rem;font-family:'Courier New',monospace;letter-spacing:.04em;cursor:pointer;}
+.btn:hover{background:#1e3d2a;}
+.btn-pdf{background:#fff;color:var(--accent);border:1.5px solid var(--accent);}
+.btn-pdf:hover{background:var(--al);}
+.btn-pdf:disabled{background:#f0f0ee;color:#aaa;border-color:#ccc;cursor:not-allowed;opacity:.7;}
+.rb{margin-top:11px;padding:10px 12px;background:#f0f7f2;border:1px solid #b2d4bc;border-radius:3px;display:none;}
+.rb.show{display:block;}
+.rl{font-family:'Courier New',monospace;font-size:.84rem;margin-bottom:4px;}
+.rl strong{color:var(--accent);font-size:.95rem;}
+.rl.note{font-size:.7rem;color:var(--muted);margin-top:5px;border-top:1px solid #cce0d3;padding-top:5px;line-height:1.5;}
+.wb{margin-top:7px;padding:7px 10px;background:var(--wb);border:1px solid var(--wbb);border-radius:3px;font-size:.7rem;font-family:'Courier New',monospace;color:#7a6020;line-height:1.5;}
+.fb{margin-top:8px;padding:6px 9px;background:#f8f8f6;border-left:2px solid var(--border);font-size:.7rem;font-family:'Courier New',monospace;color:var(--muted);line-height:1.6;}
+.fb .ref{font-style:italic;color:#bbb;}
+.dv{height:1px;background:var(--border);margin:8px 0;}
+h2{font-size:.88rem;font-weight:normal;margin-bottom:11px;color:var(--muted);font-family:'Courier New',monospace;}
+.sn{font-size:.72rem;color:var(--muted);margin-bottom:11px;line-height:1.5;font-family:'Courier New',monospace;padding:6px 9px;border-left:2px solid var(--border);background:#f8f8f6;}
+canvas{display:block;margin-top:9px;border:1px solid var(--border);border-radius:2px;}
+
+/* ── PRINT STYLES ── */
+@media print {
+  body{background:#fff;font-family:Arial,sans-serif;font-size:9pt;color:#000;}
+  header,.tab-bar,.btn,.btn-pdf,.wb,.br{display:none!important;}
+  .panel{display:none!important;}
+  #detail-overlay > div > div:first-child{display:none!important;}
+  #print-area{display:block!important;}
+  #detail-overlay{position:static!important;overflow:visible!important;background:#fff!important;}
+  #detail-overlay > div{max-width:100%!important;padding:0!important;}
+  .panel,.cs,.rb{border:none!important;padding:0!important;margin:0!important;}
+  @page{margin:15mm 18mm;size:letter;}
+}
+#print-area{display:none;}
+
+/* ── PRINT AREA STYLES ── */
+#print-area{font-family:Arial,sans-serif;font-size:9pt;color:#111;padding:0;}
+.pr-header{background:#2d5a3d;color:#fff;padding:8px 14px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;}
+.pr-header h1{font-size:11pt;font-weight:bold;letter-spacing:.04em;}
+.pr-header span{font-size:7.5pt;opacity:.8;}
+.pr-warn{background:#fdf8ee;border:1px solid #e0cc88;padding:5px 10px;font-size:7.5pt;color:#7a6020;margin-bottom:10px;}
+.pr-sec{background:#e8f0eb;color:#2d5a3d;font-weight:bold;font-size:8.5pt;padding:4px 8px;margin:10px 0 5px;border-left:3px solid #2d5a3d;}
+.pr-row{display:flex;justify-content:space-between;border-bottom:1px solid #e0ded8;padding:3px 4px;font-size:8.5pt;}
+.pr-row .pr-lbl{color:#555;}
+.pr-row .pr-val{font-family:'Courier New',monospace;font-weight:bold;color:#1a1a18;}
+.pr-formula{background:#f8f8f6;border-left:2px solid #ccc;padding:5px 8px;margin:6px 0;font-family:'Courier New',monospace;font-size:7.5pt;line-height:1.7;color:#333;white-space:pre-wrap;}
+.pr-ref{font-style:italic;font-size:7pt;color:#999;margin-bottom:4px;padding-left:4px;}
+.pr-result{background:#e8f5ec;border:1px solid #a0c8b0;padding:5px 10px;margin:3px 0;display:flex;justify-content:space-between;align-items:center;}
+.pr-result .pr-rl{font-size:8.5pt;color:#333;}
+.pr-result .pr-rv{font-family:'Courier New',monospace;font-weight:bold;font-size:10pt;color:#2d5a3d;}
+.pr-note{background:#fdf8ee;border:1px solid #e0cc88;padding:5px 8px;font-size:7pt;color:#7a6020;margin-top:8px;line-height:1.5;}
+.pr-footer{margin-top:14px;padding-top:5px;border-top:1px solid #ccc;font-size:7pt;color:#999;display:flex;justify-content:space-between;}
+.pr-canvas{margin:8px 0;max-width:100%;}
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>Geotech Field Calculator</h1>
+    <p>Quick checks only — verify with site-specific geotechnical report | CFEM 4th Ed.</p>
+  </div>
+  <div class="unit-toggle">
+    <button id="btn-si" class="active" onclick="setUnits('SI')">SI</button>
+    <button id="btn-imp" onclick="setUnits('IMP')">Imperial</button>
+  </div>
+</header>
+
+<div class="tab-bar">
+  <button class="tab active" onclick="showTab('shallow',this)">Shallow Fdn</button>
+  <button class="tab" onclick="showTab('pile',this)">Pile</button>
+  <button class="tab" onclick="showTab('earth',this)">Earth Pressure</button>
+  <button class="tab" onclick="showTab('anchor',this)">Anchor</button>
+  <button class="tab" onclick="showTab('surcharge',this)">Surcharge</button>
+  <button class="tab" onclick="showTab('spt',this)">SPT</button>
+  <button class="tab" onclick="showTab('shoring',this)">Shoring Wall</button>
+</div>
+
+<!-- DETAIL OVERLAY -->
+<div id="detail-overlay" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:#f5f4f0;z-index:9999;overflow-y:auto;">
+  <div style="max-width:720px;margin:0 auto;padding:16px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;gap:10px;flex-wrap:wrap;">
+      <div style="font-family:'Courier New',monospace;font-size:.78rem;color:var(--accent);font-weight:bold;letter-spacing:.04em;">CALCULATION DETAILS</div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn" onclick="window.print()" style="font-size:.74rem;padding:6px 14px;">Print / Save PDF</button>
+        <button class="btn" onclick="closeDetails()" style="font-size:.74rem;padding:6px 14px;background:#888;">Close</button>
+      </div>
+    </div>
+    <div id="detail-content"></div>
+  </div>
+</div>
+<div id="print-area"></div>
+
+<!-- ── SHALLOW ── -->
+<div id="tab-shallow" class="panel active">
+  <h2>Shallow Foundation — Bearing Capacity</h2>
+  <div class="sn">Hansen (1970) general bearing capacity with shape & depth factors. CFEM 4th Ed. §10.2.2.</div>
+  <div class="cs">
+    <div class="csh">Hansen (1970) Bearing Capacity <span class="ref-tag">CFEM §10.2.2 | Hansen 1970</span></div>
+    <div class="cb">
+      <div class="fr"><label>Foundation shape</label><select id="sh-shape"><option value="strip">Strip</option><option value="rect">Rectangular</option><option value="square">Square</option><option value="circular">Circular</option></select></div>
+      <div class="fr" id="sh-Lrow" style="display:none"><label>Length L <span class="u-len">m</span></label><input type="number" id="sh-L" value="3.0" step="0.25" min="0.1"><span class="ul u-len">m</span></div>
+      <div class="fr"><label>Width B <span class="u-len">m</span></label><input type="number" id="sh-B" value="2.0" step="0.25" min="0.1"><span class="ul u-len">m</span></div>
+      <div class="fr"><label>Embedment depth Df <span class="u-len">m</span></label><input type="number" id="sh-Df" value="1.5" step="0.1" min="0"><span class="ul u-len">m</span></div>
+      <div class="fr"><label>Unit weight γ <span class="u-uw">kN/m³</span></label><input type="number" id="sh-gam" value="19.0" step="0.5" min="10"><span class="ul u-uw">kN/m³</span></div>
+      <div class="fr"><label>Cohesion c′ <span class="u-p">kPa</span></label><input type="number" id="sh-c" value="0" min="0"><span class="ul u-p">kPa</span></div>
+      <div class="fr"><label>Friction angle φ′ <span>degrees</span></label><input type="number" id="sh-phi" value="32" min="0" max="50"><span class="ul">°</span></div>
+      <div class="fr"><label>Surcharge q <span class="u-p">kPa</span></label><input type="number" id="sh-q" value="0" min="0"><span class="ul u-p">kPa</span></div>
+      <div class="fr"><label>Factor of Safety</label><input type="number" id="sh-FS" value="3.0" step="0.5" min="1.5"></div>
+      <div class="br">
+        <button class="btn" onclick="calcHansen()">Calculate</button>
+        <button class="btn btn-pdf" id="sh-pdf" disabled onclick="exportPDF('hansen')">See Details</button>
+      </div>
+      <div class="fb">q_ult = c·Nc·sc·dc + q·Nq·sq·dq + 0.5·γ·B·Nγ·sγ·dγ<br><span class="ref">Hansen (1970); CFEM 4th Ed. §10.2.2, Table 10.1</span></div>
+      <div id="sh-res" class="rb">
+        <div class="rl">q_ult = <strong id="sh-qult">—</strong> <span class="u-p">kPa</span></div>
+        <div class="rl">q_net,ult = <strong id="sh-qnet">—</strong> <span class="u-p">kPa</span></div>
+        <div class="rl">q_allow = <strong id="sh-qa">—</strong> <span class="u-p">kPa</span></div>
+        <div class="rl note" id="sh-fac"></div>
+      </div>
+      <div class="wb">CFEM 4th Ed. §10.2.4: FS ≥ 3.0 typical for DL+LL; FS ≥ 2.0 for DL+LL+wind/seismic. Water table not included.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── PILE ── -->
+<div id="tab-pile" class="panel">
+  <h2>Pile Capacity</h2>
+  <div class="cs">
+    <div class="csh">Single Pile — SPT Method <span class="ref-tag">Meyerhof 1976 | CFEM §11.3</span></div>
+    <div class="cb">
+      <div class="sn">Meyerhof (1976) SPT method. High uncertainty in BC glacial soils — screening only.</div>
+      <div class="fr"><label>Pile type</label><select id="pile-type"><option value="driven">Driven (displacement)</option><option value="bored">Bored / CFA / drilled</option></select></div>
+      <div class="fr"><label>Diameter D <span class="u-len">m</span></label><input type="number" id="pile-D" value="0.50" step="0.05" min="0.1"><span class="ul u-len">m</span></div>
+      <div class="fr"><label>Length L <span class="u-len">m</span></label><input type="number" id="pile-L" value="12.0" step="0.5" min="1"><span class="ul u-len">m</span></div>
+      <div class="fr"><label>Avg N shaft <span>blows/300mm</span></label><input type="number" id="pile-Ns" value="20" min="1" max="100"><span class="ul">blows</span></div>
+      <div class="fr"><label>N at tip <span>blows/300mm</span></label><input type="number" id="pile-Nt" value="40" min="1" max="100"><span class="ul">blows</span></div>
+      <div class="fr"><label>Factor of Safety</label><input type="number" id="pile-FS" value="2.5" step="0.25" min="1.5"></div>
+      <div class="br">
+        <button class="btn" onclick="calcPile()">Calculate</button>
+        <button class="btn btn-pdf" id="pile-pdf" disabled onclick="exportPDF('pile')">See Details</button>
+      </div>
+      <div class="fb">Driven: f_s=N/50 kPa(max 100) | q_b=400N kPa(max 10MPa)<br>Bored: f_s=N/100 kPa(max 50) | q_b=100N kPa(max 5MPa)<br><span class="ref">Meyerhof (1976); CFEM 4th Ed. §11.3.2, Table 11.4</span></div>
+      <div id="pile-res" class="rb">
+        <div class="rl">Q_s (shaft) = <strong id="pile-Qs">—</strong> <span class="u-f">kN</span></div>
+        <div class="rl">Q_b (base) = <strong id="pile-Qb">—</strong> <span class="u-f">kN</span></div>
+        <div class="rl">Q_ult = <strong id="pile-Qu">—</strong> <span class="u-f">kN</span></div>
+        <div class="rl">Q_allow = <strong id="pile-Qa">—</strong> <span class="u-f">kN</span></div>
+        <div class="rl note" id="pile-note"></div>
+      </div>
+      <div class="wb">CFEM §11.3: CoV 40–75%. FS ≥ 2.5 without load test; FS ≥ 2.0 with performance test per CFEM §11.6.</div>
+    </div>
+  </div>
+  <div class="cs">
+    <div class="csh">Negative Skin Friction (Downdrag) <span class="ref-tag">CFEM §11.4.4</span></div>
+    <div class="cb">
+      <div class="fr"><label>Pile perimeter P <span class="u-len">m</span></label><input type="number" id="dd-P" value="1.57" step="0.1" min="0.1"><span class="ul u-len">m</span></div>
+      <div class="fr"><label>Soft layer Hc <span class="u-len">m</span></label><input type="number" id="dd-H" value="3.0" step="0.5" min="0"><span class="ul u-len">m</span></div>
+      <div class="fr"><label>Neg. unit friction τ_n <span class="u-p">kPa</span></label><input type="number" id="dd-tau" value="20" step="5" min="0"><span class="ul u-p">kPa</span></div>
+      <div class="br"><button class="btn" onclick="calcDowndrag()">Calculate</button></div>
+      <div class="fb">Q_NSF = τ_n · P · Hc<br><span class="ref">CFEM 4th Ed. §11.4.4; Fellenius (1988)</span></div>
+      <div id="dd-res" class="rb">
+        <div class="rl">Q_NSF = <strong id="dd-load">—</strong> <span class="u-f">kN</span></div>
+        <div class="rl note">Add to structural pile load for capacity check.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── EARTH ── -->
+<div id="tab-earth" class="panel">
+  <h2>Lateral Earth Pressure</h2>
+  <div class="cs">
+    <div class="csh">Rankine Active / Passive <span class="ref-tag">Rankine 1857 | CFEM §12.2.1</span></div>
+    <div class="cb">
+      <div class="sn">δ = 0, horizontal backfill. Rankine Kp conservative when δ > 0 — use Coulomb for passive side.</div>
+      <div class="fr"><label>Friction angle φ′ <span>degrees</span></label><input type="number" id="ep-phi" value="30" min="0" max="50"><span class="ul">°</span></div>
+      <div class="fr"><label>Cohesion c′ <span class="u-p">kPa</span></label><input type="number" id="ep-c" value="0" min="0"><span class="ul u-p">kPa</span></div>
+      <div class="fr"><label>Unit weight γ <span class="u-uw">kN/m³</span></label><input type="number" id="ep-gam" value="19.0" step="0.5"><span class="ul u-uw">kN/m³</span></div>
+      <div class="fr"><label>Wall height H <span class="u-len">m</span></label><input type="number" id="ep-H" value="4.0" step="0.5" min="0.1"><span class="ul u-len">m</span></div>
+      <div class="fr"><label>Surcharge q <span class="u-p">kPa</span></label><input type="number" id="ep-q" value="10" min="0"><span class="ul u-p">kPa</span></div>
+      <div class="br">
+        <button class="btn" onclick="calcRankine()">Calculate</button>
+        <button class="btn btn-pdf" id="ep-pdf" disabled onclick="exportPDF('earth')">See Details</button>
+      </div>
+      <div class="fb">Ka=tan²(45−φ/2) | Kp=tan²(45+φ/2) | σ_a=Ka(γz+q)−2c√Ka<br><span class="ref">Rankine (1857); CFEM 4th Ed. §12.2.1, Eq. 12.3–12.5</span></div>
+      <div id="ep-res" class="rb">
+        <div class="rl">Ka = <strong id="ep-Ka">—</strong> &nbsp;|&nbsp; Kp = <strong id="ep-Kp">—</strong></div>
+        <div class="dv"></div>
+        <div class="rl">σ_a at z=H = <strong id="ep-sab">—</strong> <span class="u-p">kPa</span></div>
+        <div class="rl">P_a total = <strong id="ep-Pa">—</strong> <span class="u-fl">kN/m</span></div>
+        <div class="rl">&nbsp; soil = <strong id="ep-Pas">—</strong> <span class="u-fl">kN/m</span> &nbsp;|&nbsp; surcharge = <strong id="ep-Paq">—</strong> <span class="u-fl">kN/m</span></div>
+        <div class="rl note" id="ep-crack"></div>
+        <canvas id="ep-canvas" width="460" height="210"></canvas>
+      </div>
+    </div>
+  </div>
+  <div class="cs">
+    <div class="csh">At-Rest Pressure K₀ <span class="ref-tag">Mayne & Kulhawy 1982 | CFEM §12.2.2</span></div>
+    <div class="cb">
+      <div class="fr"><label>Friction angle φ′ <span>degrees</span></label><input type="number" id="k0-phi" value="30" min="0" max="50"><span class="ul">°</span></div>
+      <div class="fr"><label>OCR <span>≥ 1</span></label><input type="number" id="k0-OCR" value="1.0" step="0.5" min="1"></div>
+      <div class="fr"><label>Unit weight γ <span class="u-uw">kN/m³</span></label><input type="number" id="k0-gam" value="19.0" step="0.5"><span class="ul u-uw">kN/m³</span></div>
+      <div class="fr"><label>Wall height H <span class="u-len">m</span></label><input type="number" id="k0-H" value="4.0" step="0.5" min="0.1"><span class="ul u-len">m</span></div>
+      <div class="fr"><label>Surcharge q <span class="u-p">kPa</span></label><input type="number" id="k0-q" value="0" min="0"><span class="ul u-p">kPa</span></div>
+      <div class="br"><button class="btn" onclick="calcK0()">Calculate</button></div>
+      <div class="fb">K₀=(1−sinφ′)·OCR^sinφ′<br><span class="ref">Mayne & Kulhawy (1982); CFEM 4th Ed. §12.2.2, Eq. 12.2</span></div>
+      <div id="k0-res" class="rb">
+        <div class="rl">K₀ = <strong id="k0-val">—</strong></div>
+        <div class="rl">σ_h at base = <strong id="k0-base">—</strong> <span class="u-p">kPa</span></div>
+        <div class="rl">Total lateral force = <strong id="k0-tot">—</strong> <span class="u-fl">kN/m</span></div>
+        <div class="rl">&nbsp; soil = <strong id="k0-soil">—</strong> <span class="u-fl">kN/m</span> &nbsp;|&nbsp; surcharge = <strong id="k0-qc">—</strong> <span class="u-fl">kN/m</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── ANCHOR ── -->
+<div id="tab-anchor" class="panel">
+  <h2>Ground Anchor / Tieback</h2>
+  <div class="cs">
+    <div class="csh">Bond Zone Capacity <span class="ref-tag">CFEM §9.5 | FHWA-NHI-14-007</span></div>
+    <div class="cb">
+      <div class="sn">Pressure-grouted (Type B) anchor. Proof testing required per CFEM §9.5.4 and VBBL 2025.</div>
+      <div class="fr"><label>Soil / rock type</label><select id="anc-soil" onchange="ancHint()"><option value="sand">Sand / Gravel</option><option value="clay">Clay</option><option value="till">Glacial till</option><option value="rock">Rock</option></select></div>
+      <div class="fr"><label>Unit bond stress τ_a <span class="u-p">kPa</span></label><input type="number" id="anc-tau" value="100" step="10" min="10"><span class="ul u-p">kPa</span></div>
+      <div id="anc-hint" class="fb" style="margin-bottom:8px;">Typical τ_a (CFEM Table 9.1): Sand/gravel 70–200 kPa</div>
+      <div class="fr"><label>Drill hole diam d_h <span>mm</span></label><input type="number" id="anc-dh" value="150" step="10" min="75"><span class="ul">mm</span></div>
+      <div class="fr"><label>Bond length L_b <span class="u-len">m</span></label><input type="number" id="anc-Lb" value="6.0" step="0.5" min="3"><span class="ul u-len">m</span></div>
+      <div class="fr"><label>Factor of Safety <span>2.0 untested / 1.5 tested</span></label><input type="number" id="anc-FS" value="2.0" step="0.25" min="1.5"></div>
+      <div class="br">
+        <button class="btn" onclick="calcAnchor()">Calculate</button>
+        <button class="btn btn-pdf" id="anc-pdf" disabled onclick="exportPDF('anchor')">See Details</button>
+      </div>
+      <div class="fb">Q_ult = τ_a·π·d_h·L_b | Q_allow = Q_ult/FS<br><span class="ref">CFEM 4th Ed. §9.5.2, Eq. 9.5; FHWA-NHI-14-007 §5.3.1</span></div>
+      <div id="anc-res" class="rb">
+        <div class="rl">Q_ult = <strong id="anc-Qu">—</strong> <span class="u-f">kN</span></div>
+        <div class="rl">Q_allow = <strong id="anc-Qa">—</strong> <span class="u-f">kN</span></div>
+        <div class="rl note">Proof test = 1.33× design load | Performance test = 1.50× design load (CFEM §9.5.4)</div>
+      </div>
+    </div>
+  </div>
+  <div class="cs">
+    <div class="csh">Anchor Load from Shoring <span class="ref-tag">CFEM §12.4.3</span></div>
+    <div class="cb">
+      <div class="fr"><label>Lateral pressure p <span class="u-p">kPa</span></label><input type="number" id="al-p" value="40" step="5" min="0"><span class="ul u-p">kPa</span></div>
+      <div class="fr"><label>Vertical spacing s_v <span class="u-len">m</span></label><input type="number" id="al-sv" value="2.0" step="0.25" min="0.5"><span class="ul u-len">m</span></div>
+      <div class="fr"><label>Horizontal spacing s_h <span class="u-len">m</span></label><input type="number" id="al-sh" value="2.4" step="0.2" min="0.5"><span class="ul u-len">m</span></div>
+      <div class="fr"><label>Inclination α <span>° from horizontal</span></label><input type="number" id="al-alpha" value="15" step="5" min="0" max="45"><span class="ul">°</span></div>
+      <div class="br"><button class="btn" onclick="calcAnchorLoad()">Calculate</button></div>
+      <div class="fb">T_H = p·s_v·s_h | T_design = T_H/cos(α)<br><span class="ref">CFEM 4th Ed. §12.4.3</span></div>
+      <div id="al-res" class="rb">
+        <div class="rl">T_H (horizontal) = <strong id="al-TH">—</strong> <span class="u-f">kN</span></div>
+        <div class="rl">T_design (along anchor) = <strong id="al-Td">—</strong> <span class="u-f">kN</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── SURCHARGE ── -->
+<div id="tab-surcharge" class="panel">
+  <h2>Surcharge — Lateral Stress on Wall</h2>
+  <div class="sn" style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+    <span>Boussinesq (1885). CFEM §12.3. Rigid wall (shoring/basement) ×2; Flexible wall (gravity retaining) ×1.</span>
+    <div class="unit-toggle" style="flex-shrink:0;">
+      <button id="wall-rigid" class="active" onclick="setWallType('rigid')">Rigid ×2</button>
+      <button id="wall-flex" onclick="setWallType('flex')">Flexible ×1</button>
+    </div>
+  </div>
+  <div class="cs">
+    <div class="csh">Strip Load <span class="ref-tag">Boussinesq | CFEM §12.3.2</span></div>
+    <div class="cb">
+      <div class="fr"><label>Strip load q <span class="u-p">kPa</span></label><input type="number" id="sl-q" value="20" step="5" min="0"><span class="ul u-p">kPa</span></div>
+      <div class="fr"><label>Distance from wall a <span class="u-len">m</span></label><input type="number" id="sl-a" value="1.0" step="0.25" min="0"><span class="ul u-len">m</span></div>
+      <div class="fr"><label>Strip width b <span class="u-len">m</span></label><input type="number" id="sl-b" value="2.0" step="0.25" min="0.1"><span class="ul u-len">m</span></div>
+      <div class="fr"><label>Wall height H <span class="u-len">m</span></label><input type="number" id="sl-H" value="4.0" step="0.5" min="0.5"><span class="ul u-len">m</span></div>
+      <div class="br">
+        <button class="btn" onclick="calcStrip()">Calculate</button>
+        <button class="btn btn-pdf" id="sl-pdf" disabled onclick="exportPDF('strip')">See Details</button>
+      </div>
+      <div class="fb">Δσ_h(z) = (q/π)[β−sin(β)cos(2α_m)] × <span id="sl-factor-label">2</span> (rigid wall)<br><span class="ref">Boussinesq (1885); CFEM 4th Ed. §12.3.2; Terzaghi image method for rigid walls</span></div>
+      <div id="sl-res" class="rb">
+        <div class="rl">Total ΔP_H = <strong id="sl-PH">—</strong> <span class="u-fl">kN/m</span></div>
+        <div class="rl">Resultant at z = <strong id="sl-zb">—</strong> <span class="u-len">m</span> from top</div>
+        <canvas id="sl-canvas" width="460" height="210"></canvas>
+      </div>
+    </div>
+  </div>
+  <div class="cs">
+    <div class="csh">Point Load <span class="ref-tag">Boussinesq | CFEM §12.3.1</span></div>
+    <div class="cb">
+      <div class="fr"><label>Point load Q <span class="u-f">kN</span></label><input type="number" id="pl-Q" value="100" step="10" min="1"><span class="ul u-f">kN</span></div>
+      <div class="fr"><label>Distance x <span class="u-len">m</span></label><input type="number" id="pl-x" value="1.5" step="0.25" min="0.1"><span class="ul u-len">m</span></div>
+      <div class="fr"><label>Wall height H <span class="u-len">m</span></label><input type="number" id="pl-H" value="4.0" step="0.5" min="0.5"><span class="ul u-len">m</span></div>
+      <div class="br">
+        <button class="btn" onclick="calcPoint()">Calculate</button>
+        <button class="btn btn-pdf" id="pl-pdf" disabled onclick="exportPDF('point')">See Details</button>
+      </div>
+      <div class="fb">Δσ_h(z)=(3Q·x²·z)/(2π·R⁵) × <span id="pl-factor-label">2</span> | R=√(x²+z²)<br><span class="ref">Boussinesq (1885); CFEM 4th Ed. §12.3.1, Eq. 12.14</span></div>
+      <div id="pl-res" class="rb">
+        <div class="rl">Total ΔP_H = <strong id="pl-PH">—</strong> <span class="u-fl">kN/m</span></div>
+        <div class="rl">Max Δσ_h = <strong id="pl-sm">—</strong> <span class="u-p">kPa</span> at z = <strong id="pl-zm">—</strong> <span class="u-len">m</span></div>
+        <canvas id="pl-canvas" width="460" height="210"></canvas>
+      </div>
+    </div>
+  </div>
+  <div class="cs">
+    <div class="csh">Line Load <span class="ref-tag">Boussinesq | CFEM §12.3.2</span></div>
+    <div class="cb">
+      <div class="fr"><label>Line load q_L <span class="u-fl">kN/m</span></label><input type="number" id="ll-q" value="50" step="10" min="1"><span class="ul u-fl">kN/m</span></div>
+      <div class="fr"><label>Distance x <span class="u-len">m</span></label><input type="number" id="ll-x" value="1.0" step="0.25" min="0.1"><span class="ul u-len">m</span></div>
+      <div class="fr"><label>Wall height H <span class="u-len">m</span></label><input type="number" id="ll-H" value="4.0" step="0.5" min="0.5"><span class="ul u-len">m</span></div>
+      <div class="br"><button class="btn" onclick="calcLine()">Calculate</button></div>
+      <div class="fb">Δσ_h(z)=(2·q_L·x²·z)/(π·(x²+z²)²) × <span id="ll-factor-label">2</span><br><span class="ref">Boussinesq (1885); CFEM 4th Ed. §12.3.2, Eq. 12.15</span></div>
+      <div id="ll-res" class="rb">
+        <div class="rl">Total ΔP_H = <strong id="ll-PH">—</strong> <span class="u-fl">kN/m</span></div>
+        <div class="rl">Max Δσ_h = <strong id="ll-sm">—</strong> <span class="u-p">kPa</span> at z = <strong id="ll-zm">—</strong> <span class="u-len">m</span></div>
+        <canvas id="ll-canvas" width="460" height="210"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── SPT ── -->
+<div id="tab-spt" class="panel">
+  <h2>SPT Corrections & Correlations</h2>
+  <div class="cs">
+    <div class="csh">N → N60 → (N₁)₆₀ <span class="ref-tag">Skempton 1986 | CFEM §4.4</span></div>
+    <div class="cb">
+      <div class="fr"><label>Measured N <span>blows/300mm</span></label><input type="number" id="spt-N" value="25" min="1" max="100"><span class="ul">blows</span></div>
+      <div class="fr"><label>Hammer efficiency Er <span>%</span></label><input type="number" id="spt-Er" value="60" min="40" max="95"><span class="ul">%</span></div>
+      <div class="fr"><label>Eff. overburden σ′_v <span class="u-p">kPa</span></label><input type="number" id="spt-sv" value="100" step="10" min="10"><span class="ul u-p">kPa</span></div>
+      <div class="fr"><label>Soil type</label><select id="spt-soil"><option value="sand">Sand / Gravel</option><option value="clay">Clay / Silt</option></select></div>
+      <div class="br">
+        <button class="btn" onclick="calcSPT()">Calculate</button>
+        <button class="btn btn-pdf" id="spt-pdf" disabled onclick="exportPDF('spt')">See Details</button>
+      </div>
+      <div class="fb">N60=N·(Er/60) | C_N=min(2.0,√(100/σ′_v)) | (N₁)₆₀=C_N·N60<br><span class="ref">Skempton (1986); CFEM §4.4.2; Liao & Whitman (1986)</span></div>
+      <div id="spt-res" class="rb">
+        <div class="rl">N60 = <strong id="spt-n60">—</strong> &nbsp;|&nbsp; C_N = <strong id="spt-CN">—</strong> &nbsp;|&nbsp; (N₁)₆₀ = <strong id="spt-n160">—</strong></div>
+        <div class="dv"></div>
+        <div id="spt-sand">
+          <div class="rl">φ′ ≈ <strong id="spt-phi">—</strong>° <span style="font-size:.7rem;color:var(--muted)">(Wolff 1989)</span></div>
+          <div class="rl">Dr ≈ <strong id="spt-Dr">—</strong>% <span style="font-size:.7rem;color:var(--muted)">(Skempton 1986)</span></div>
+          <div class="rl">Es ≈ <strong id="spt-Es">—</strong> MPa <span style="font-size:.7rem;color:var(--muted)">(Bowles 1996)</span></div>
+          <canvas id="spt-canvas" width="460" height="190"></canvas>
+        </div>
+        <div id="spt-clay" style="display:none">
+          <div class="rl">Su ≈ <strong id="spt-Su">—</strong> <span class="u-p">kPa</span> <span style="font-size:.7rem;color:var(--muted)">(Stroud 1974)</span></div>
+          <div class="rl">Consistency: <strong id="spt-cons">—</strong></div>
+        </div>
+        <div class="rl note" id="spt-warn"></div>
+      </div>
+      <div class="wb">CFEM §4.4: CoV 25–50%. Stroud Su for stiff clays — may overestimate for BC soft clays.</div>
+    </div>
+  </div>
+  <div class="cs">
+    <div class="csh">SPT N → Allowable Bearing <span class="ref-tag">Meyerhof 1974 | CFEM §10.4</span></div>
+    <div class="cb">
+      <div class="fr"><label>Avg field N <span>below fdn</span></label><input type="number" id="mb-N" value="20" min="1" max="100"><span class="ul">blows</span></div>
+      <div class="fr"><label>Width B <span class="u-len">m</span></label><input type="number" id="mb-B" value="2.0" step="0.25" min="0.25"><span class="ul u-len">m</span></div>
+      <div class="fr"><label>Depth Df <span class="u-len">m</span></label><input type="number" id="mb-Df" value="1.5" step="0.25" min="0"><span class="ul u-len">m</span></div>
+      <div class="fr"><label>Settlement s <span>mm</span></label><input type="number" id="mb-s" value="25" step="5" min="5"><span class="ul">mm</span></div>
+      <div class="br"><button class="btn" onclick="calcMB()">Calculate</button></div>
+      <div class="fb">B≤1.2m: q_a=(N/0.05)·(s/25)·Fd | B>1.2m: q_a=(N/0.08)·((B+0.3)/B)²·(s/25)·Fd<br>Fd=1+0.33·(Df/B)≤1.33<br><span class="ref">Meyerhof (1974); CFEM 4th Ed. §10.4.2</span></div>
+      <div id="mb-res" class="rb">
+        <div class="rl">Fd = <strong id="mb-Fd">—</strong></div>
+        <div class="rl">q_allow ≈ <strong id="mb-qa">—</strong> <span class="u-p">kPa</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── SHORING WALL ── -->
+<div id="tab-shoring" class="panel">
+  <h2>Anchored Shoring Wall — Auto Design</h2>
+  <div class="sn">Total active force equally distributed across all anchor rows. Bond length uniform for all rows. Free length varies by row depth (Rankine failure plane 45+φ/2). CFEM 4th Ed. §12.4, §9.5.</div>
+
+  <div class="cs">
+    <div class="csh">Geometry & Excavation <span class="ref-tag">CFEM §12.4</span></div>
+    <div class="cb">
+      <div class="fr"><label>Total excavation depth H <span class="u-len">m</span></label><input type="number" id="sw-H" value="8.0" step="0.5" min="1"><span class="ul u-len">m</span></div>
+      <div class="fr"><label>Max unsupported span <span class="u-len">m — top, between rows, bottom</span></label><input type="number" id="sw-smax" value="2.5" step="0.25" min="1.0"><span class="ul u-len">m</span></div>
+      <div class="fr"><label>Min depth to Row 1 <span class="u-len">m — allow passive at top</span></label><input type="number" id="sw-d1min" value="1.5" step="0.25" min="0.5"><span class="ul u-len">m</span></div>
+      <div class="fr"><label>Min clearance at bottom <span class="u-len">m — last anchor to subgrade</span></label><input type="number" id="sw-hbmin" value="1.5" step="0.25" min="0.5"><span class="ul u-len">m</span></div>
+      <div id="sw-auto-preview" class="fb" style="margin-bottom:0;color:var(--accent);"></div>
+      <div class="fr"><label>Horizontal anchor spacing <span class="u-len">m</span></label><input type="number" id="sw-sh" value="2.4" step="0.2" min="0.5"><span class="ul u-len">m</span></div>
+      <div class="fr"><label>Anchor inclination α <span>° from horizontal</span></label><input type="number" id="sw-alpha" value="15" step="5" min="5" max="35"><span class="ul">°</span></div>
+    </div>
+  </div>
+
+  <div class="cs">
+    <div class="csh">Soil Parameters <span class="ref-tag">Rankine 1857 | CFEM §12.2</span></div>
+    <div class="cb">
+      <div class="fr"><label>Friction angle φ′ <span>degrees</span></label><input type="number" id="sw-phi" value="32" min="0" max="45"><span class="ul">°</span></div>
+      <div class="fr"><label>Cohesion c′ <span class="u-p">kPa</span></label><input type="number" id="sw-c" value="0" min="0"><span class="ul u-p">kPa</span></div>
+      <div class="fr"><label>Unit weight γ <span class="u-uw">kN/m³</span></label><input type="number" id="sw-gam" value="19.0" step="0.5" min="10"><span class="ul u-uw">kN/m³</span></div>
+      <div class="fr"><label>Water table depth <span class="u-len">m from surface (999 = dry)</span></label><input type="number" id="sw-wt" value="999" step="0.5" min="0"><span class="ul u-len">m</span></div>
+      <div class="fr"><label>Surcharge q <span class="u-p">kPa</span></label><input type="number" id="sw-q" value="10" min="0"><span class="ul u-p">kPa</span></div>
+    </div>
+  </div>
+
+  <div class="cs">
+    <div class="csh">Anchor Parameters <span class="ref-tag">CFEM §9.5 | FHWA-NHI-14-007</span></div>
+    <div class="cb">
+      <div class="fr"><label>Soil / rock type</label><select id="sw-soil"><option value="sand">Sand / Gravel</option><option value="clay">Clay</option><option value="till">Glacial till</option><option value="rock">Rock</option></select></div>
+      <div class="fr"><label>Unit bond stress τ_a <span class="u-fl">kN/m</span></label><input type="number" id="sw-tau" value="50" step="5" min="5"><span class="ul u-fl">kN/m</span></div>
+      <div id="sw-hint" class="fb" style="margin-bottom:8px;">Typical τ_a (CFEM Table 9.1): Sand/gravel 30–90 kN/m | Clay 15–45 kN/m | Glacial till 65–180 kN/m | Rock 130–450 kN/m<br><span style="color:#aaa;font-size:.68rem;">τ_a (kN/m) = unit bond stress (kPa) × drill hole circumference (π·d_h)</span></div>
+      <div class="fr"><label>Drill hole diameter d_h <span>mm</span></label><input type="number" id="sw-dh" value="150" step="10" min="75"><span class="ul">mm</span></div>
+      <div class="fr"><label>FS (bond) <span>2.0 untested / 1.5 tested</span></label><input type="number" id="sw-FSb" value="2.0" step="0.25" min="1.5"></div>
+      <div class="fr"><label>Min free length <span class="u-len">m — CFEM §9.5.3 min 4.5m</span></label><input type="number" id="sw-Lfmin" value="4.5" step="0.5" min="3"><span class="ul u-len">m</span></div>
+    </div>
+  </div>
+
+  <div class="br" style="padding:0 0 14px 0;">
+    <button class="btn" onclick="calcShoring()">Design</button>
+    <button class="btn btn-pdf" id="sw-pdf" disabled onclick="exportPDF('shoring')">See Details</button>
+  </div>
+
+  <div id="sw-res" class="rb">
+    <div style="font-family:'Courier New',monospace;font-size:.78rem;color:var(--accent);margin-bottom:8px;font-weight:bold;">DESIGN SUMMARY</div>
+
+    <!-- Pressure summary -->
+    <div class="rl" id="sw-kaline"></div>
+    <div class="rl" id="sw-paline"></div>
+    <div class="dv"></div>
+
+    <!-- Per-row table -->
+    <div style="overflow-x:auto;">
+      <table id="sw-table" style="width:100%;border-collapse:collapse;font-family:'Courier New',monospace;font-size:.75rem;">
+        <thead>
+          <tr style="background:var(--al);color:var(--accent);">
+            <th style="padding:5px 6px;text-align:left;border:1px solid var(--border);">Row</th>
+            <th style="padding:5px 6px;text-align:center;border:1px solid var(--border);">Depth<br><span style="font-weight:normal;font-size:.68rem;" class="u-len">m</span></th>
+            <th style="padding:5px 6px;text-align:center;border:1px solid var(--border);">Design Load<br><span style="font-weight:normal;font-size:.68rem;" class="u-f">kN</span></th>
+            <th style="padding:5px 6px;text-align:center;border:1px solid var(--border);">Proof Load<br><span style="font-weight:normal;font-size:.68rem;" class="u-f">kN</span> <span style="font-weight:normal;font-size:.65rem;opacity:.7">×1.33</span></th>
+            <th style="padding:5px 6px;text-align:center;border:1px solid var(--border);">Free L<br><span style="font-weight:normal;font-size:.68rem;" class="u-len">m</span></th>
+            <th style="padding:5px 6px;text-align:center;border:1px solid var(--border);">Bond L<br><span style="font-weight:normal;font-size:.68rem;" class="u-len">m</span></th>
+            <th style="padding:5px 6px;text-align:center;border:1px solid var(--border);">Total L<br><span style="font-weight:normal;font-size:.68rem;" class="u-len">m</span></th>
+          </tr>
+        </thead>
+        <tbody id="sw-tbody"></tbody>
+      </table>
+    </div>
+
+    <div class="dv"></div>
+    <!-- Calculation steps -->
+    <div style="font-family:'Courier New',monospace;font-size:.75rem;color:var(--accent);margin-bottom:6px;font-weight:bold;">CALCULATION STEPS</div>
+    <div id="sw-steps" style="font-family:'Courier New',monospace;font-size:.75rem;line-height:1.9;color:var(--text);background:#f8f8f6;border-left:2px solid var(--accent);padding:10px 12px;margin-bottom:12px;white-space:pre-wrap;"></div>
+    <div class="dv"></div>
+    <!-- Wall cross-section diagram -->
+    <div style="font-family:'Courier New',monospace;font-size:.75rem;color:var(--accent);margin-bottom:5px;">WALL CROSS-SECTION</div>
+    <canvas id="sw-canvas" width="460" height="420"></canvas>
+    <div class="rl note" id="sw-notes"></div>
+  </div>
+</div>
+
+<script>
+// ═══ UNITS ══════════════════════════════════════════════════
+let UNITS='SI';
+const C={len:3.28084,p:20.8854,uw:6.36587,f:0.224809,fl:0.0685218};
+const UL={SI:{len:'m',p:'kPa',uw:'kN/m³',f:'kN',fl:'kN/m'},IMP:{len:'ft',p:'psf',uw:'pcf',f:'kip',fl:'kip/ft'}};
+
+function setUnits(u){
+  if(UNITS===u)return;
+  const fwd=u==='IMP';
+  const factors={len:fwd?C.len:1/C.len,p:fwd?C.p:1/C.p,uw:fwd?C.uw:1/C.uw};
+  ['len','p','uw'].forEach(type=>{
+    document.querySelectorAll('.fr').forEach(row=>{
+      const ul=row.querySelector('.u-'+type);
+      if(!ul)return;
+      const inp=row.querySelector('input[type=number]');
+      if(inp){const v=parseFloat(inp.value);if(!isNaN(v))inp.value=(v*factors[type]).toFixed(3).replace(/\.?0+$/,'');}
+    });
+  });
+  UNITS=u;
+  document.getElementById('btn-si').classList.toggle('active',u==='SI');
+  document.getElementById('btn-imp').classList.toggle('active',u==='IMP');
+  const UU=UL[u];
+  document.querySelectorAll('.u-len').forEach(el=>el.textContent=UU.len);
+  document.querySelectorAll('.u-p').forEach(el=>el.textContent=UU.p);
+  document.querySelectorAll('.u-uw').forEach(el=>el.textContent=UU.uw);
+  document.querySelectorAll('.u-f').forEach(el=>el.textContent=UU.f);
+  document.querySelectorAll('.u-fl').forEach(el=>el.textContent=UU.fl);
+  document.querySelectorAll('.rb').forEach(el=>el.classList.remove('show'));
+  document.querySelectorAll('.btn-pdf').forEach(b=>b.disabled=true);
+}
+// convert input value to SI
+function siLen(id){const v=parseFloat(document.getElementById(id).value)||0;return UNITS==='IMP'?v/C.len:v;}
+function siP(id){const v=parseFloat(document.getElementById(id).value)||0;return UNITS==='IMP'?v/C.p:v;}
+function siUW(id){const v=parseFloat(document.getElementById(id).value)||0;return UNITS==='IMP'?v/C.uw:v;}
+function siF(id){const v=parseFloat(document.getElementById(id).value)||0;return UNITS==='IMP'?v/C.f:v;}
+function siFL(id){const v=parseFloat(document.getElementById(id).value)||0;return UNITS==='IMP'?v/C.fl:v;}
+function raw(id){return parseFloat(document.getElementById(id).value)||0;}
+// convert SI output to display units
+function dp(v){return UNITS==='IMP'?v*C.p:v;}
+function df(v){return UNITS==='IMP'?v*C.f:v;}
+function dfl(v){return UNITS==='IMP'?v*C.fl:v;}
+function dl(v){return UNITS==='IMP'?v*C.len:v;}
+function U(t){return UL[UNITS][t];}
+
+// ═══ HELPERS ════════════════════════════════════════════════
+function set(id,v){const e=document.getElementById(id);if(e)e.textContent=v;}
+function show(id){const e=document.getElementById(id);if(e)e.classList.add('show');}
+function ena(id){const e=document.getElementById(id);if(e)e.disabled=false;}
+document.getElementById('sh-shape').addEventListener('change',function(){
+  document.getElementById('sh-Lrow').style.display=this.value==='rect'?'flex':'none';
+});
+
+// ═══ PLOT ═══════════════════════════════════════════════════
+function drawPlot(id,zs,vs,H,col,xl){
+  const c=document.getElementById(id);if(!c)return;
+  const ctx=c.getContext('2d'),W=c.width,H2=c.height;
+  const P={t:26,r:16,b:32,l:48},pw=W-P.l-P.r,ph=H2-P.t-P.b;
+  ctx.clearRect(0,0,W,H2);ctx.fillStyle='#fafaf8';ctx.fillRect(0,0,W,H2);
+  const mx=Math.max(...vs,0.01);
+  ctx.strokeStyle='#e8e6e0';ctx.lineWidth=.5;
+  for(let i=0;i<=4;i++){
+    const x=P.l+i*pw/4,y=P.t+i*ph/4;
+    ctx.beginPath();ctx.moveTo(x,P.t);ctx.lineTo(x,P.t+ph);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(P.l,y);ctx.lineTo(P.l+pw,y);ctx.stroke();
+    ctx.fillStyle='#aaa';ctx.font='8px Courier New';
+    ctx.textAlign='center';ctx.fillText((mx*i/4).toFixed(1),x,P.t+ph+14);
+    ctx.textAlign='right';ctx.fillText((H*i/4).toFixed(1),P.l-3,y+3);
+  }
+  ctx.beginPath();ctx.moveTo(P.l,P.t);
+  zs.forEach((z,i)=>ctx.lineTo(P.l+vs[i]/mx*pw,P.t+z/H*ph));
+  ctx.lineTo(P.l,P.t+ph);ctx.closePath();ctx.fillStyle=col+'28';ctx.fill();
+  ctx.beginPath();ctx.strokeStyle=col;ctx.lineWidth=2;
+  zs.forEach((z,i)=>{i===0?ctx.moveTo(P.l+vs[i]/mx*pw,P.t+z/H*ph):ctx.lineTo(P.l+vs[i]/mx*pw,P.t+z/H*ph);});
+  ctx.stroke();
+  ctx.strokeStyle='#1e3d2a';ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.moveTo(P.l,P.t);ctx.lineTo(P.l,P.t+ph);ctx.lineTo(P.l+pw,P.t+ph);ctx.stroke();
+  ctx.fillStyle='#2d5a3d';ctx.font='bold 8px Arial';ctx.textAlign='center';ctx.fillText(xl,P.l+pw/2,P.t-8);
+  ctx.save();ctx.translate(13,P.t+ph/2);ctx.rotate(-Math.PI/2);ctx.fillStyle='#6b6860';ctx.font='8px Arial';ctx.fillText('Depth ('+U('len')+')',0,0);ctx.restore();
+}
+function drawSPT(id,N160,phi,Dr){
+  const c=document.getElementById(id);if(!c)return;
+  const ctx=c.getContext('2d'),W=c.width,H=c.height;
+  ctx.clearRect(0,0,W,H);ctx.fillStyle='#fafaf8';ctx.fillRect(0,0,W,H);
+  function half(ox,w,yMin,yMax,yLbl,col,dN,dV,fn,title){
+    const P={t:24,r:10,b:24,l:38},pw=w-P.l-P.r,ph=H-P.t-P.b;
+    ctx.strokeStyle='#e8e6e0';ctx.lineWidth=.5;
+    for(let i=0;i<=4;i++){
+      const x=ox+P.l+i*pw/4,y=P.t+i*ph/4;
+      ctx.beginPath();ctx.moveTo(x,P.t);ctx.lineTo(x,P.t+ph);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(ox+P.l,y);ctx.lineTo(ox+P.l+pw,y);ctx.stroke();
+      ctx.fillStyle='#aaa';ctx.font='7.5px Courier New';
+      ctx.textAlign='center';ctx.fillText((60*i/4).toFixed(0),x,P.t+ph+13);
+      ctx.textAlign='right';ctx.fillText((yMax-(yMax-yMin)*i/4).toFixed(0),ox+P.l-3,y+3);
+    }
+    ctx.beginPath();ctx.strokeStyle=col;ctx.lineWidth=2;
+    for(let n=0;n<=60;n++){
+      const vv=fn(n),x=ox+P.l+n*pw/60,y=P.t+(yMax-Math.min(Math.max(vv,yMin),yMax))/(yMax-yMin)*ph;
+      n===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+    }
+    ctx.stroke();
+    const dx=ox+P.l+dN*pw/60,dy=P.t+(yMax-Math.min(Math.max(dV,yMin),yMax))/(yMax-yMin)*ph;
+    ctx.beginPath();ctx.arc(dx,dy,5,0,Math.PI*2);ctx.fillStyle='#b94a48';ctx.fill();
+    ctx.fillStyle='#2d5a3d';ctx.font='bold 8px Arial';ctx.textAlign='center';ctx.fillText(title,ox+P.l+pw/2,P.t-8);
+    ctx.fillStyle='#aaa';ctx.font='7.5px Arial';ctx.fillText('(N₁)₆₀',ox+P.l+pw/2,H-3);
+    ctx.save();ctx.translate(ox+11,P.t+ph/2);ctx.rotate(-Math.PI/2);ctx.fillStyle='#6b6860';ctx.fillText(yLbl,0,0);ctx.restore();
+  }
+  const hw=W/2;
+  half(0,hw,25,48,"φ'(°)",'#2d5a3d',N160,phi,n=>27.1+.3*n-.00054*n*n,"φ' — Wolff 1989");
+  half(hw,hw,0,100,'Dr(%)', '#5a8a6a',N160,Dr,n=>Math.min(100,100*Math.sqrt(n/60)),'Dr — Skempton 1986');
+}
+
+// ═══ CALCULATIONS ═══════════════════════════════════════════
+let R={};
+
+function calcHansen(){
+  const shape=document.getElementById('sh-shape').value;
+  const B=siLen('sh-B'),L=shape==='rect'?siLen('sh-L'):(shape==='strip'?1e6:B);
+  const Df=siLen('sh-Df'),gam=siUW('sh-gam'),c=siP('sh-c'),phi=raw('sh-phi'),q_sur=siP('sh-q'),FS=raw('sh-FS');
+  const r=phi*Math.PI/180;
+  const Nq=Math.exp(Math.PI*Math.tan(r))*Math.pow(Math.tan(Math.PI/4+r/2),2);
+  const Nc=phi>0?(Nq-1)/Math.tan(r):5.14,Ng=1.5*(Nq-1)*Math.tan(r);
+  let sc,sq,sg;
+  if(shape==='strip'){sc=1;sq=1;sg=1;}
+  else if(shape==='circular'){sc=1+Nq/Nc;sq=1+Math.tan(r);sg=.6;}
+  else if(phi===0){sc=1+.2*B/L;sq=1;sg=1;}
+  else{sc=1+(Nq/Nc)*(B/L);sq=1+(B/L)*Math.tan(r);sg=1-.4*(B/L);}
+  const rat=Df/B;
+  const dc=rat<=1?1+.4*rat:1+.4*Math.atan(rat);
+  const dq=rat<=1?1+2*Math.tan(r)*(1-Math.sin(r))**2*rat:1+2*Math.tan(r)*(1-Math.sin(r))**2*Math.atan(rat);
+  const q=gam*Df+q_sur,t1=c*Nc*sc*dc,t2=q*Nq*sq*dq,t3=.5*gam*B*Ng*sg;
+  const qult=t1+t2+t3,qnet=qult-gam*Df,qa=qult/FS;
+  set('sh-qult',dp(qult).toFixed(1));set('sh-qnet',dp(qnet).toFixed(1));set('sh-qa',dp(qa).toFixed(1));
+  set('sh-fac',`Nc=${Nc.toFixed(2)} Nq=${Nq.toFixed(2)} Nγ=${Ng.toFixed(2)} | sc=${sc.toFixed(3)} sq=${sq.toFixed(3)} sγ=${sg.toFixed(3)} | dc=${dc.toFixed(3)} dq=${dq.toFixed(3)}`);
+  show('sh-res');ena('sh-pdf');
+  R.hansen={shape,B,L,Df,gam,c,phi,q_sur,FS,Nq,Nc,Ng,sc,sq,sg,dc,dq,rat,t1,t2,t3,qult,qnet,qa,q};
+}
+
+function calcPile(){
+  const pt=document.getElementById('pile-type').value;
+  const D=siLen('pile-D'),L=siLen('pile-L'),Ns=raw('pile-Ns'),Nt=raw('pile-Nt'),FS=raw('pile-FS');
+  const fs=pt==='driven'?Math.min(Ns/50,100):Math.min(Ns/100,50);
+  const qb=pt==='driven'?Math.min(400*Nt,10000):Math.min(100*Nt,5000);
+  const per=Math.PI*D,At=Math.PI*D*D/4,Qs=fs*per*L,Qb=qb*At,Qu=Qs+Qb,Qa=Qu/FS;
+  set('pile-Qs',df(Qs).toFixed(0));set('pile-Qb',df(Qb).toFixed(0));set('pile-Qu',df(Qu).toFixed(0));set('pile-Qa',df(Qa).toFixed(0));
+  set('pile-note',`f_s=${fs.toFixed(1)} kPa · q_b=${qb.toFixed(0)} kPa`);
+  show('pile-res');ena('pile-pdf');
+  R.pile={pt,D,L,Ns,Nt,FS,fs,qb,per,At,Qs,Qb,Qu,Qa};
+}
+function calcDowndrag(){
+  const P=siLen('dd-P'),Hc=siLen('dd-H'),tau=siP('dd-tau');
+  set('dd-load',df(tau*P*Hc).toFixed(0));show('dd-res');
+}
+
+function calcRankine(){
+  const phi=raw('ep-phi'),c=siP('ep-c'),gam=siUW('ep-gam'),H=siLen('ep-H'),q=siP('ep-q');
+  const r=phi*Math.PI/180,Ka=Math.pow(Math.tan(Math.PI/4-r/2),2),Kp=Math.pow(Math.tan(Math.PI/4+r/2),2);
+  const sab=Ka*(gam*H+q)-2*c*Math.sqrt(Ka),zc=(c>0&&phi>0)?2*c/(gam*Math.sqrt(Ka)):0;
+  let Pas,Paq,note='';
+  if(zc>0&&zc<H){const He=H-zc;Pas=.5*Ka*gam*He*He;Paq=Ka*q*He;note=`Tension crack z_c=${zc.toFixed(2)} m. Water-filled: add ${(.5*9.81*zc*zc).toFixed(1)} kN/m (CFEM §12.2.3).`;}
+  else{Pas=.5*Ka*gam*H*H;Paq=Ka*q*H;}
+  const Pa=Pas+Paq;
+  set('ep-Ka',Ka.toFixed(4));set('ep-Kp',Kp.toFixed(4));set('ep-sab',dp(sab).toFixed(2));
+  set('ep-Pa',dfl(Pa).toFixed(2));set('ep-Pas',dfl(Pas).toFixed(2));set('ep-Paq',dfl(Paq).toFixed(2));
+  set('ep-crack',note);
+  const zArr=[],vArr=[];
+  for(let i=1;i<=50;i++){const z=i/50*H;zArr.push(z);vArr.push(Math.max(0,Ka*(gam*z+q)-2*c*Math.sqrt(Ka)));}
+  drawPlot('ep-canvas',zArr,vArr,H,'#2d5a3d','σ_a ('+U('p')+')');
+  show('ep-res');ena('ep-pdf');
+  R.earth={phi,c,gam,H,q,Ka,Kp,sab,zc,Pas,Paq,Pa,zArr,vArr};
+}
+function calcK0(){
+  const phi=raw('k0-phi'),OCR=raw('k0-OCR'),gam=siUW('k0-gam'),H=siLen('k0-H'),q=siP('k0-q');
+  const sp=Math.sin(phi*Math.PI/180),K0=(1-sp)*Math.pow(OCR,sp);
+  const shb=K0*(gam*H+q),Fs=.5*K0*gam*H*H,Fq=K0*q*H;
+  set('k0-val',K0.toFixed(4));set('k0-base',dp(shb).toFixed(2));
+  set('k0-tot',dfl(Fs+Fq).toFixed(2));set('k0-soil',dfl(Fs).toFixed(2));set('k0-qc',dfl(Fq).toFixed(2));
+  show('k0-res');
+}
+
+function ancHint(){const h={sand:'Typical τ_a (CFEM Table 9.1): Sand/gravel 70–200 kPa',clay:'Clay 30–100 kPa',till:'Glacial till 150–400 kPa',rock:'Rock 300–1000 kPa'};document.getElementById('anc-hint').textContent=h[document.getElementById('anc-soil').value];}
+function calcAnchor(){
+  const tau=siP('anc-tau'),dh=raw('anc-dh')/1000,Lb=siLen('anc-Lb'),FS=raw('anc-FS');
+  const soil=document.getElementById('anc-soil').value;
+  const Qu=tau*Math.PI*dh*Lb,Qa=Qu/FS;
+  set('anc-Qu',df(Qu).toFixed(1));set('anc-Qa',df(Qa).toFixed(1));
+  show('anc-res');ena('anc-pdf');
+  R.anchor={tau,dh,Lb,FS,soil,Qu,Qa};
+}
+function calcAnchorLoad(){
+  const p=siP('al-p'),sv=siLen('al-sv'),sh=siLen('al-sh'),alpha=raw('al-alpha')*Math.PI/180;
+  const TH=p*sv*sh,Td=TH/Math.cos(alpha);
+  set('al-TH',df(TH).toFixed(1));set('al-Td',df(Td).toFixed(1));show('al-res');
+}
+
+let WALL_FACTOR = 2; // 2 = rigid, 1 = flexible
+function setWallType(t){
+  WALL_FACTOR = t==='rigid' ? 2 : 1;
+  document.getElementById('wall-rigid').classList.toggle('active', t==='rigid');
+  document.getElementById('wall-flex').classList.toggle('active', t==='flex');
+  const lbl = WALL_FACTOR+'  ('+(t==='rigid'?'rigid — Terzaghi image method':'flexible — no image factor')+')';
+  ['sl-factor-label','pl-factor-label','ll-factor-label'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.textContent=WALL_FACTOR;
+  });
+  // Clear results so stale values aren't shown
+  ['sl-res','pl-res','ll-res'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.classList.remove('show');
+  });
+  ['sl-pdf','pl-pdf'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.disabled=true;
+  });
+}
+function stripAt(z,q,a,b){const a1=Math.atan((a+b)/z),a2=Math.atan(a/z),beta=a1-a2,am=(a1+a2)/2;return Math.max(0,(q/Math.PI)*(beta-Math.sin(beta)*Math.cos(2*am))*WALL_FACTOR);}
+function calcStrip(){
+  const q=siP('sl-q'),a=siLen('sl-a'),b=siLen('sl-b'),H=siLen('sl-H');
+  const n=40,dz=H/n;let PH=0,zPH=0,zArr=[],vArr=[];
+  for(let i=1;i<=n;i++){const z=(i-.5)*dz,dsh=stripAt(z,q,a,b);PH+=dsh*dz;zPH+=dsh*z*dz;zArr.push(z);vArr.push(dsh);}
+  const zb=PH>0?zPH/PH:0;
+  set('sl-PH',dfl(PH).toFixed(2));set('sl-zb',dl(zb).toFixed(2));
+  drawPlot('sl-canvas',zArr,vArr,H,'#2d5a3d','Δσ_h ('+U('p')+')');
+  show('sl-res');ena('sl-pdf');R.strip={q,a,b,H,n,PH,zb,zArr,vArr,wf:WALL_FACTOR};
+}
+function calcPoint(){
+  const Q=UNITS==='IMP'?raw('pl-Q')/C.f:raw('pl-Q'),x=siLen('pl-x'),H=siLen('pl-H');
+  const n=40,dz=H/n;let PH=0,zm=0,sm=0,zArr=[],vArr=[];
+  for(let i=1;i<=n;i++){const z=(i-.5)*dz,Rv=Math.sqrt(x*x+z*z),dsh=(3*Q*x*x*z)/(2*Math.PI*Math.pow(Rv,5))*WALL_FACTOR;PH+=dsh*dz;if(dsh>sm){sm=dsh;zm=z;}zArr.push(z);vArr.push(Math.max(0,dsh));}
+  set('pl-PH',dfl(PH).toFixed(2));set('pl-sm',dp(sm).toFixed(3));set('pl-zm',dl(zm).toFixed(2));
+  drawPlot('pl-canvas',zArr,vArr,H,'#5a8a6a','Δσ_h ('+U('p')+')');
+  show('pl-res');ena('pl-pdf');R.point={Q,x,H,PH,zm,sm,zArr,vArr,wf:WALL_FACTOR};
+}
+function calcLine(){
+  const qL=UNITS==='IMP'?raw('ll-q')/C.fl:raw('ll-q'),x=siLen('ll-x'),H=siLen('ll-H');
+  const n=40,dz=H/n;let PH=0,zm=0,sm=0,zArr=[],vArr=[];
+  for(let i=1;i<=n;i++){const z=(i-.5)*dz,dsh=(2*qL*x*x*z)/(Math.PI*Math.pow(x*x+z*z,2))*WALL_FACTOR;PH+=dsh*dz;if(dsh>sm){sm=dsh;zm=z;}zArr.push(z);vArr.push(Math.max(0,dsh));}
+  set('ll-PH',dfl(PH).toFixed(2));set('ll-sm',dp(sm).toFixed(3));set('ll-zm',dl(zm).toFixed(2));
+  drawPlot('ll-canvas',zArr,vArr,H,'#7aaa8a','Δσ_h ('+U('p')+')');show('ll-res');
+}
+
+function calcSPT(){
+  const N=raw('spt-N'),Er=raw('spt-Er'),sv=siP('spt-sv'),soil=document.getElementById('spt-soil').value;
+  const N60=N*(Er/60),CN=Math.min(2,Math.sqrt(100/sv)),N160=CN*N60;
+  set('spt-n60',N60.toFixed(1));set('spt-CN',CN.toFixed(3));set('spt-n160',N160.toFixed(1));
+  let phi,Dr,Es,Su,cons;
+  if(soil==='sand'){
+    document.getElementById('spt-sand').style.display='block';
+    document.getElementById('spt-clay').style.display='none';
+    phi=Math.min(27.1+.3*N160-.00054*N160*N160,48);Dr=Math.min(100,100*Math.sqrt(N160/60));Es=.5*N160;
+    set('spt-phi',phi.toFixed(1));set('spt-Dr',Dr.toFixed(0));set('spt-Es',Es.toFixed(1));
+    set('spt-warn','φ′ by Wolff (1989). Dr by Skempton (1986) — NC clean sand assumed. Es by Bowles (1996).');
+    drawSPT('spt-canvas',N160,phi,Dr);
+  } else {
+    document.getElementById('spt-sand').style.display='none';
+    document.getElementById('spt-clay').style.display='block';
+    Su=N60*6;
+    const tbl=[[0,'Very soft'],[2,'Soft'],[4,'Firm'],[8,'Stiff'],[15,'Very stiff'],[30,'Hard']];
+    cons='Very soft';for(const[l,lb]of tbl){if(N60>=l)cons=lb;}
+    set('spt-Su',dp(Su).toFixed(0));set('spt-cons',cons);
+    set('spt-warn','Su=6·N60 (Stroud 1974) — stiff clays only. May overestimate for BC soft clays.');
+  }
+  show('spt-res');ena('spt-pdf');R.spt={N,Er,sv,soil,N60,CN,N160,phi,Dr,Es,Su,cons};
+}
+function calcMB(){
+  const N=raw('mb-N'),B=siLen('mb-B'),Df=siLen('mb-Df'),s=raw('mb-s');
+  const Fd=Math.min(1+.33*Df/B,1.33),qa=B<=1.2?(N/.05)*(s/25)*Fd:(N/.08)*((B+.3)/B)**2*(s/25)*Fd;
+  set('mb-Fd',Fd.toFixed(3));set('mb-qa',dp(qa).toFixed(0));show('mb-res');
+}
+
+// ═══ TAB ════════════════════════════════════════════════════
+function showTab(id,btn){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');btn.classList.add('active');
+}
+
+// ═══ PDF via print ══════════════════════════════════════════
+function row(lbl,val,unit){return`<div class="pr-row"><span class="pr-lbl">${lbl}</span><span class="pr-val">${val}${unit?' <span style="font-weight:normal;color:#666;font-size:8pt">'+unit+'</span>':''}</span></div>`;}
+function res(lbl,val,unit){return`<div class="pr-result"><span class="pr-rl">${lbl}</span><span class="pr-rv">${val} <span style="font-size:8pt;color:#5a8a6a">${unit||''}</span></span></div>`;}
+function sec(t){return`<div class="pr-sec">${t}</div>`;}
+function fml(lines){return`<div class="pr-formula">${lines.join('\n')}</div>`;}
+function ref(t){return`<div class="pr-ref">Ref: ${t}</div>`;}
+function nt(t){return`<div class="pr-note">${t}</div>`;}
+function canvasImg(id){const c=document.getElementById(id);if(!c)return'';return`<img class="pr-canvas" src="${c.toDataURL()}" style="max-width:100%;margin:8px 0;">`;}
+
+function closeDetails(){
+  document.getElementById('detail-overlay').style.display='none';
+  document.getElementById('print-area').innerHTML='';
+}
+
+function exportPDF(type){
+  const TODAY=new Date().toISOString().slice(0,10);
+  const UP=UNITS==='SI'?'SI':'Imperial';
+  let html=`<div class="pr-header"><h1>GEOTECH FIELD CALCULATOR — CALCULATION REPORT</h1><span>CFEM 4th Ed. | ${TODAY}</span></div>
+<div class="pr-warn">PRELIMINARY — For screening only. Verify with sealed geotechnical report.</div>`;
+
+  if(type==='hansen'){
+    const r=R.hansen; if(!r){alert('Please Calculate first.');return;}
+    html+=sec('SHALLOW FOUNDATION — BEARING CAPACITY (HANSEN 1970) ['+UP+']');
+    html+=sec('1. Input Parameters');
+    html+=row('Foundation shape',r.shape,'');
+    html+=row('Width B',dl(r.B).toFixed(2),U('len'));
+    html+=row('Length L',r.L>=1e5?'(strip)':dl(r.L).toFixed(2),U('len'));
+    html+=row('Embedment depth Df',dl(r.Df).toFixed(2),U('len'));
+    html+=row('Unit weight γ',(UNITS==='IMP'?r.gam*C.uw:r.gam).toFixed(1),U('uw'));
+    html+=row("Cohesion c'",dp(r.c).toFixed(1),U('p'));
+    html+=row("Friction angle φ'",r.phi.toFixed(1),'degrees');
+    html+=row('Surcharge q',dp(r.q_sur).toFixed(1),U('p'));
+    html+=row('Factor of Safety FS',r.FS.toFixed(1),'');
+    html+=sec('2. Bearing Capacity Factors (Hansen 1970)');
+    html+=fml([`Nq = exp(π·tanφ') · tan²(45+φ'/2) = ${r.Nq.toFixed(4)}`,`Nc = (Nq−1)/tanφ'            = ${r.Nc.toFixed(4)}`,`Nγ = 1.5·(Nq−1)·tanφ'       = ${r.Ng.toFixed(4)}`]);
+    html+=ref('Hansen (1970); CFEM 4th Ed. §10.2.2, Table 10.1');
+    html+=sec('3. Shape Factors (Hansen 1970)');
+    html+=fml([`sc = 1 + (Nq/Nc)·(B/L) = ${r.sc.toFixed(4)}`,`sq = 1 + (B/L)·tanφ'   = ${r.sq.toFixed(4)}`,`sγ = 1 − 0.4·(B/L)     = ${r.sg.toFixed(4)}`]);
+    html+=ref('Hansen (1970); CFEM 4th Ed. §10.2.2, Eq. 10.5');
+    html+=sec('4. Depth Factors  (Df/B = '+r.rat.toFixed(3)+')');
+    html+=fml([`dc = ${r.dc.toFixed(4)}   ${r.rat<=1?'[Df/B ≤ 1]':'[Df/B > 1: arctan]'}`,`dq = ${r.dq.toFixed(4)}`,`dγ = 1.0000`]);
+    html+=ref('Hansen (1970); CFEM 4th Ed. §10.2.2, Eq. 10.6');
+    html+=sec('5. Ultimate Bearing Capacity');
+    html+=fml([`q_ult = c·Nc·sc·dc + q·Nq·sq·dq + 0.5·γ·B·Nγ·sγ·dγ`,`      = ${r.t1.toFixed(2)} + ${r.t2.toFixed(2)} + ${r.t3.toFixed(2)}`,`      = ${r.qult.toFixed(2)} kPa  (${dp(r.qult).toFixed(2)} ${U('p')})`]);
+    html+=ref('Hansen (1970); BCBC 2024 Div.B §4.2.4');
+    html+=res('q_ult (gross)',dp(r.qult).toFixed(1),U('p'));
+    html+=res('q_net,ult',dp(r.qnet).toFixed(1),U('p'));
+    html+=res('q_allow = q_ult / '+r.FS.toFixed(1),dp(r.qa).toFixed(1),U('p'));
+    html+=nt('CFEM §10.2.4: FS ≥ 3.0 (DL+LL); FS ≥ 2.0 (DL+LL+wind/seismic). Water table not included — reduce γ if WT above bearing level.');
+
+  } else if(type==='pile'){
+    const r=R.pile; if(!r){alert('Please Calculate first.');return;}
+    html+=sec('SINGLE PILE CAPACITY — SPT METHOD (MEYERHOF 1976) ['+UP+']');
+    html+=sec('1. Input Parameters');
+    html+=row('Pile type',r.pt,'');
+    html+=row('Diameter D',dl(r.D).toFixed(3),U('len'));
+    html+=row('Length L',dl(r.L).toFixed(1),U('len'));
+    html+=row('Avg N (shaft)',r.Ns,'blows/300mm');
+    html+=row('N at tip',r.Nt,'blows/300mm');
+    html+=row('Factor of Safety FS',r.FS.toFixed(2),'');
+    html+=sec('2. Unit Skin Friction (Shaft)');
+    const fsF=r.pt==='driven'?`f_s = N/50 = ${r.Ns}/50 = ${(r.Ns/50).toFixed(2)} kPa  (cap: 100 kPa)`:`f_s = N/100 = ${r.Ns}/100 = ${(r.Ns/100).toFixed(2)} kPa  (cap: 50 kPa)`;
+    html+=fml([fsF,`f_s applied = ${r.fs.toFixed(2)} kPa`,`Qs = f_s · π · D · L = ${r.fs.toFixed(2)} × ${r.per.toFixed(4)} × ${r.L.toFixed(1)} = ${r.Qs.toFixed(1)} kN`]);
+    html+=ref('Meyerhof (1976); CFEM 4th Ed. §11.3.2, Table 11.4');
+    html+=sec('3. Unit Base Resistance');
+    const qbF=r.pt==='driven'?`q_b = 400 × N_tip = 400 × ${r.Nt} = ${400*r.Nt} kPa  (cap: 10 MPa)`:`q_b = 100 × N_tip = 100 × ${r.Nt} = ${100*r.Nt} kPa  (cap: 5 MPa)`;
+    html+=fml([qbF,`q_b applied = ${r.qb.toFixed(0)} kPa`,`Atip = πD²/4 = ${r.At.toFixed(5)} m²`,`Qb = ${r.qb.toFixed(0)} × ${r.At.toFixed(5)} = ${r.Qb.toFixed(1)} kN`]);
+    html+=ref('Meyerhof (1976); CFEM 4th Ed. §11.3.2');
+    html+=sec('4. Total Capacity');
+    html+=fml([`Q_ult   = Qs + Qb = ${r.Qs.toFixed(1)} + ${r.Qb.toFixed(1)} = ${r.Qu.toFixed(1)} kN`,`Q_allow = Q_ult / FS = ${r.Qu.toFixed(1)} / ${r.FS} = ${r.Qa.toFixed(1)} kN`]);
+    html+=res('Qs (shaft)',df(r.Qs).toFixed(0),U('f'));
+    html+=res('Qb (base)',df(r.Qb).toFixed(0),U('f'));
+    html+=res('Q_ult',df(r.Qu).toFixed(0),U('f'));
+    html+=res('Q_allow',df(r.Qa).toFixed(0),U('f'));
+    html+=nt('CFEM §11.3: CoV 40–75%. FS ≥ 2.5 without load test; FS ≥ 2.0 with performance test (CFEM §11.6). BC glacial till requires site-specific calibration.');
+
+  } else if(type==='earth'){
+    const r=R.earth; if(!r){alert('Please Calculate first.');return;}
+    html+=sec('LATERAL EARTH PRESSURE — RANKINE (1857) ['+UP+']');
+    html+=sec('1. Input Parameters');
+    html+=row("Friction angle φ'",r.phi.toFixed(1),'degrees');
+    html+=row("Cohesion c'",dp(r.c).toFixed(1),U('p'));
+    html+=row('Unit weight γ',(UNITS==='IMP'?r.gam*C.uw:r.gam).toFixed(1),U('uw'));
+    html+=row('Wall height H',dl(r.H).toFixed(2),U('len'));
+    html+=row('Surcharge q',dp(r.q).toFixed(1),U('p'));
+    html+=sec('2. Pressure Coefficients');
+    html+=fml([`Ka = tan²(45−φ/2) = tan²(${(45-r.phi/2).toFixed(2)}°) = ${r.Ka.toFixed(4)}`,`Kp = tan²(45+φ/2) = tan²(${(45+r.phi/2).toFixed(2)}°) = ${r.Kp.toFixed(4)}`]);
+    html+=ref('Rankine (1857); CFEM 4th Ed. §12.2.1, Eq. 12.3–12.4');
+    if(r.zc>0){html+=sec('3. Tension Crack');html+=fml([`z_c = 2c/(γ·√Ka) = ${r.zc.toFixed(3)} m`,`Water-filled: add 0.5·γ_w·z_c² = ${(.5*9.81*r.zc*r.zc).toFixed(2)} kN/m (CFEM §12.2.3)`]);}
+    html+=sec(r.zc>0?'4. Active Force (below tension crack)':'3. Active Pressure & Force');
+    html+=fml([`σ_a(z=H) = Ka·(γ·H+q) − 2c·√Ka = ${r.sab.toFixed(2)} kPa`,`Pa,soil = 0.5·Ka·γ·He²       = ${r.Pas.toFixed(2)} kN/m`,`Pa,q    = Ka·q·He             = ${r.Paq.toFixed(2)} kN/m`,`Pa      = Pa,soil + Pa,q       = ${r.Pa.toFixed(2)} kN/m`]);
+    html+=ref('Rankine (1857); CFEM 4th Ed. §12.2.1, Eq. 12.3–12.5');
+    html+=res('Ka',r.Ka.toFixed(4),'');html+=res('Kp (Rankine)',r.Kp.toFixed(4),'');
+    html+=res('σ_a at base',dp(r.sab).toFixed(2),U('p'));
+    html+=res('Pa (soil)',dfl(r.Pas).toFixed(2),U('fl'));
+    html+=res('Pa (surcharge)',dfl(r.Paq).toFixed(2),U('fl'));
+    html+=res('Pa total',dfl(r.Pa).toFixed(2),U('fl'));
+    html+=sec('Pressure Distribution Chart');
+    html+=canvasImg('ep-canvas');
+    html+=nt('Rankine Kp conservative when δ > 0 — use Coulomb for passive side (CFEM §12.2.2).');
+
+  } else if(type==='anchor'){
+    const r=R.anchor; if(!r){alert('Please Calculate first.');return;}
+    html+=sec('GROUTED ANCHOR — BOND ZONE CAPACITY (CFEM §9.5) ['+UP+']');
+    html+=sec('1. Input Parameters');
+    html+=row('Soil / rock type',r.soil,'');
+    html+=row('Unit bond stress τ_a',dp(r.tau).toFixed(0),U('p'));
+    html+=row('Drill hole diameter d_h',(r.dh*1000).toFixed(0),'mm');
+    html+=row('Bond length L_b',dl(r.Lb).toFixed(2),U('len'));
+    html+=row('Factor of Safety FS',r.FS.toFixed(2),'');
+    html+=sec('2. Bond Zone Capacity');
+    html+=fml([`Q_ult = τ_a · π · d_h · L_b`,`      = ${r.tau.toFixed(0)} × π × ${r.dh.toFixed(4)} × ${r.Lb.toFixed(2)}`,`      = ${r.Qu.toFixed(2)} kN  (${df(r.Qu).toFixed(2)} ${U('f')})`,``,`Q_allow = Q_ult / FS = ${r.Qu.toFixed(2)} / ${r.FS} = ${r.Qa.toFixed(2)} kN  (${df(r.Qa).toFixed(2)} ${U('f')})`]);
+    html+=ref('CFEM 4th Ed. §9.5.2, Eq. 9.5; FHWA-NHI-14-007 §5.3.1');
+    html+=res('Q_ult',df(r.Qu).toFixed(1),U('f'));
+    html+=res('Q_allow',df(r.Qa).toFixed(1),U('f'));
+    html+=nt('Proof test = 1.33× design load (CFEM §9.5.4). Performance test = 1.50×. FS = 1.5 if proof tested; FS = 2.0 if untested. Typical τ_a: Sand 70–200 kPa; Clay 30–100 kPa; Glacial till 150–400 kPa; Rock 300–1000 kPa (CFEM Table 9.1).');
+
+  } else if(type==='strip'){
+    const r=R.strip; if(!r){alert('Please Calculate first.');return;}
+    html+=sec('SURCHARGE — STRIP LOAD LATERAL STRESS (BOUSSINESQ 1885) ['+UP+']');
+    html+=sec('1. Input Parameters');
+    html+=row('Strip load intensity q',dp(r.q).toFixed(1),U('p'));
+    html+=row('Distance from wall a',dl(r.a).toFixed(2),U('len'));
+    html+=row('Strip width b',dl(r.b).toFixed(2),U('len'));
+    html+=row('Wall height H',dl(r.H).toFixed(2),U('len'));
+    html+=sec('2. Method');
+    html+=fml([`Δσ_h(z) = (q/π)[β − sin(β)·cos(2α_m)] × 2   (rigid wall factor ×2)`,`β, α_m = angles subtended by load at depth z`]);
+    html+=ref('Boussinesq (1885); Spangler & Handy (1984); CFEM 4th Ed. §12.3.2');
+    html+=sec('3. Lateral Stress Distribution');
+    const dz=r.H/r.n;
+    for(let i=0;i<r.zArr.length;i+=4){html+=row(`z = ${dl(r.zArr[i]).toFixed(2)} ${U('len')}`,dp(r.vArr[i]).toFixed(3),U('p'));}
+    html+=res('Total ΔP_H',dfl(r.PH).toFixed(2),U('fl'));
+    html+=res('Resultant depth from top',dl(r.zb).toFixed(2),U('len'));
+    html+=sec('Pressure Distribution Chart');html+=canvasImg('sl-canvas');
+    const wfDesc=r.wf===2?'Rigid wall factor ×2 applied (Terzaghi image method) — for non-yielding walls (shoring, basement). CFEM §12.3.2.':'Flexible wall factor ×1 — for yielding/gravity retaining walls. CFEM §12.3.2.';
+    html+=nt(wfDesc);
+    html+=row('Wall type',r.wf===2?'Rigid (×2)':'Flexible (×1)','');
+
+  } else if(type==='point'){
+    const r=R.point; if(!r){alert('Please Calculate first.');return;}
+    html+=sec('SURCHARGE — POINT LOAD LATERAL STRESS (BOUSSINESQ 1885) ['+UP+']');
+    html+=sec('1. Input Parameters');
+    html+=row('Point load Q',df(r.Q).toFixed(0),U('f'));
+    html+=row('Horizontal distance x',dl(r.x).toFixed(2),U('len'));
+    html+=row('Wall height H',dl(r.H).toFixed(2),U('len'));
+    html+=sec('2. Method');
+    html+=fml([`Δσ_h(z) = (3·Q·x²·z) / (2π·R⁵) × 2   (rigid wall)`,`R = √(x² + z²)`]);
+    html+=ref('Boussinesq (1885); CFEM 4th Ed. §12.3.1, Eq. 12.14');
+    html+=res('Total ΔP_H',dfl(r.PH).toFixed(2),U('fl'));
+    html+=res('Max Δσ_h',dp(r.sm).toFixed(3),U('p'));
+    html+=res('Max at depth z',dl(r.zm).toFixed(2),U('len'));
+    html+=sec('Pressure Distribution Chart');html+=canvasImg('pl-canvas');
+
+  } else if(type==='spt'){
+    const r=R.spt; if(!r){alert('Please Calculate first.');return;}
+    html+=sec('SPT CORRECTIONS & CORRELATIONS ['+UP+']');
+    html+=sec('1. Input Parameters');
+    html+=row('Measured field N',r.N,'blows/300mm');
+    html+=row('Hammer efficiency Er',r.Er.toFixed(0),'%');
+    html+=row("Effective overburden σ'_v",dp(r.sv).toFixed(1),U('p'));
+    html+=row('Soil type',r.soil,'');
+    html+=sec('2. Energy Correction — N60 (Skempton 1986)');
+    html+=fml([`N60 = N × (Er/60) = ${r.N} × (${r.Er}/60) = ${r.N60.toFixed(2)}`]);
+    html+=ref('Skempton (1986); CFEM 4th Ed. §4.4.2');
+    html+=sec('3. Overburden Correction — C_N (Liao & Whitman 1986)');
+    html+=fml([`C_N = min(2.0, √(100/σ'_v)) = min(2.0, √(100/${r.sv.toFixed(1)})) = ${r.CN.toFixed(4)}`,`(N₁)₆₀ = C_N × N60 = ${r.CN.toFixed(4)} × ${r.N60.toFixed(2)} = ${r.N160.toFixed(2)}`]);
+    html+=ref('Liao & Whitman (1986); CFEM 4th Ed. §4.4.2, Eq. 4.5');
+    if(r.soil==='sand'){
+      html+=sec("4. Correlations for Sand");
+      html+=fml([`φ' (Wolff 1989):  27.1 + 0.3·N160 − 0.00054·N160²`,`   = 27.1 + 0.3×${r.N160.toFixed(2)} − 0.00054×${r.N160.toFixed(2)}² = ${r.phi.toFixed(2)}°`,``,`Dr (Skempton 1986):  100·√(N160/60) = 100·√(${r.N160.toFixed(2)}/60) = ${r.Dr.toFixed(1)}%`,``,`Es (Bowles 1996):  0.5·N160 = ${r.Es.toFixed(2)} MPa`]);
+      html+=ref('Wolff (1989); Skempton (1986); Bowles (1996); CFEM 4th Ed. §4.4.3');
+      html+=res('N60',r.N60.toFixed(2),'');html+=res('(N₁)₆₀',r.N160.toFixed(2),'');
+      html+=res("φ' (Wolff 1989)",r.phi.toFixed(1),'degrees');
+      html+=res('Dr (Skempton 1986)',r.Dr.toFixed(0),'%');
+      html+=res('Es (Bowles 1996)',r.Es.toFixed(1),'MPa');
+      html+=sec('Correlation Charts');html+=canvasImg('spt-canvas');
+    } else {
+      html+=sec('4. Correlations for Clay (Stroud 1974)');
+      html+=fml([`Su = 6 × N60 = 6 × ${r.N60.toFixed(2)} = ${r.Su.toFixed(0)} kPa`,`Consistency: ${r.cons}`]);
+      html+=ref('Stroud (1974); CFEM 4th Ed. §4.4.4');
+      html+=res('Su (Stroud 1974)',dp(r.Su).toFixed(0),U('p'));
+      html+=res('Consistency',r.cons,'');
+    }
+    html+=nt('CoV 25–50% (CFEM §4.4.1). Stroud Su calibrated on stiff clays — may overestimate for BC soft clays. Typical Er: Auto 90–95%; Safety 60%; Donut 45%.');
+
+  } else if(type==='shoring'){
+    const r=R.shoring; if(!r){alert('Please Design first.');return;}
+    html+=sec('ANCHORED SHORING WALL — AUTO DESIGN ['+UP+']');
+    html+=sec('1. INPUT PARAMETERS');
+    html+=row('Excavation depth H',dl(r.H).toFixed(2),U('len'));
+    html+=row('Max unsupported span',dl(r.smax).toFixed(2),U('len'));
+    html+=row('Min depth to Row 1',dl(r.d1min).toFixed(2),U('len'));
+    html+=row('Min bottom clearance',dl(r.hbmin).toFixed(2),U('len'));
+    html+=row('→ Rows auto-designed',r.nR,'rows');
+    html+=row('→ Row 1 depth',dl(r.d1).toFixed(2),U('len'));
+    html+=row('→ Row spacing',dl(r.sv).toFixed(2),U('len'));
+    html+=row('→ Bottom clearance',dl(r.hb).toFixed(2),U('len'));
+    html+=row('Horizontal anchor spacing',dl(r.sh).toFixed(2),U('len'));
+    html+=row('Anchor inclination α',r.alpha+'','degrees');
+    html+=row("Friction angle φ'",r.phi.toFixed(1),'degrees');
+    html+=row("Cohesion c'",dp(r.c).toFixed(1),U('p'));
+    html+=row('Unit weight γ',(UNITS==='IMP'?r.gam*C.uw:r.gam).toFixed(1),U('uw'));
+    html+=row('Water table depth',r.wt>=999?'Dry':dl(r.wt).toFixed(1),r.wt>=999?'':U('len'));
+    html+=row('Surcharge q',dp(r.q).toFixed(1),U('p'));
+    html+=row('Soil/rock type',r.soil,'');
+    html+=row('Unit bond stress τ_a',(UNITS==='IMP'?r.tau_linear*C.fl:r.tau_linear).toFixed(1),U('fl'));
+    html+=row('Drill hole diameter',(r.dh*1000).toFixed(0),'mm');
+    html+=row('FS (bond)',r.FSb.toFixed(2),'');
+    html+=row('Min free length',dl(r.Lfmin).toFixed(1),U('len'));
+    html+=sec('2. PRESSURE COEFFICIENTS');
+    const phiR2=r.phi*Math.PI/180;
+    html+=fml([
+      `Ka = tan²(45 − φ/2) = tan²(${(45-r.phi/2).toFixed(2)}°) = ${r.Ka.toFixed(4)}`,
+      `Total active force Pa = ${dfl(r.Pa_total).toFixed(2)} ${U('fl')}`,
+    ]);
+    html+=ref('Rankine (1857); CFEM 4th Ed. §12.2.1');
+    html+=sec('3. FREE LENGTH — RANKINE FAILURE PLANE');
+    const failAng2=45+r.phi/2;
+    html+=fml([
+      `Rankine failure plane: ${failAng2.toFixed(1)}° from horizontal`,
+      `L_f,geom = (H − z_anchor) / tan(${failAng2.toFixed(1)}°) / cos(α)`,
+      `L_f = max(L_f,geom,  ${dl(r.Lfmin).toFixed(1)} ${U('len')} min)`,
+    ]);
+    html+=ref('CFEM 4th Ed. §9.5.3 — minimum free length to ensure anchor bond zone is beyond failure plane');
+    html+=sec('4. BOND LENGTH');
+    html+=fml([
+      `Required Q_ult = T_design × FS`,
+      `L_b = Q_ult / (τ_a × π × d_h)`,
+      `    = T_design × ${r.FSb} / (${dp(r.tau).toFixed(0)} × π × ${(r.dh*1000).toFixed(0)}/1000)`,
+    ]);
+    html+=ref('CFEM 4th Ed. §9.5.2, Eq. 9.5; FHWA-NHI-14-007 §5.3.1');
+    html+=sec('5. DESIGN RESULTS PER ANCHOR ROW');
+    html+=`<table style="width:100%;border-collapse:collapse;font-family:Courier New,monospace;font-size:8pt;margin:6px 0;">
+      <tr style="background:#e8f0eb;color:#2d5a3d;">
+        <th style="padding:4px 5px;border:1px solid #ccc;">Row</th>
+        <th style="padding:4px 5px;border:1px solid #ccc;">Depth (${U('len')})</th>
+        <th style="padding:4px 5px;border:1px solid #ccc;">Design Load (${U('f')})</th>
+        <th style="padding:4px 5px;border:1px solid #ccc;">Proof Load (${U('f')}) ×1.33</th>
+        <th style="padding:4px 5px;border:1px solid #ccc;">Free L (${U('len')})</th>
+        <th style="padding:4px 5px;border:1px solid #ccc;">Bond L (${U('len')})</th>
+        <th style="padding:4px 5px;border:1px solid #ccc;">Total L (${U('len')})</th>
+      </tr>`;
+    r.rows.forEach((rr,i)=>{
+      html+=`<tr style="background:${i%2===0?'#f5f4f0':'#fff'}">
+        <td style="padding:4px 5px;border:1px solid #ccc;font-weight:bold;color:#2d5a3d;">R${rr.row}</td>
+        <td style="padding:4px 5px;border:1px solid #ccc;text-align:center;">${dl(rr.depth).toFixed(2)}</td>
+        <td style="padding:4px 5px;border:1px solid #ccc;text-align:center;font-weight:bold;">${df(rr.Td).toFixed(1)}</td>
+        <td style="padding:4px 5px;border:1px solid #ccc;text-align:center;color:#8B4513;">${df(rr.Proof).toFixed(1)}</td>
+        <td style="padding:4px 5px;border:1px solid #ccc;text-align:center;">${dl(rr.Lf).toFixed(2)}</td>
+        <td style="padding:4px 5px;border:1px solid #ccc;text-align:center;font-weight:bold;">${dl(rr.Lb).toFixed(2)}</td>
+        <td style="padding:4px 5px;border:1px solid #ccc;text-align:center;color:#2d5a3d;font-weight:bold;">${dl(rr.Lt).toFixed(2)}</td>
+      </tr>`;
+    });
+    html+='</table>';
+    // Add calculation steps to PDF
+    const stepsEl2 = document.getElementById('sw-steps');
+    if(stepsEl2 && stepsEl2.textContent){
+      html+=sec('6. CALCULATION STEPS');
+      html+=`<div style="font-family:Courier New,monospace;font-size:7.5pt;line-height:1.8;background:#f8f8f6;border-left:2px solid #2d5a3d;padding:8px 10px;white-space:pre-wrap;color:#222;">${stepsEl2.textContent.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>`;
+    }
+    html+=sec('7. WALL CROSS-SECTION');
+    html+=canvasImg('sw-canvas');
+    html+=nt('Equal load distribution: total Pa divided equally across all anchor rows. Bond length uniform for all rows. Free length varies per row (Rankine failure plane, 45+φ/2, CFEM §9.5.3). Proof test = 1.25 × T_design (CFEM §9.5.4). FS = 1.5 if proof tested; 2.0 if untested.');
+
+  }
+
+  html+=`<div class="pr-footer"><span>Geotech Field Calculator | PRELIMINARY — NOT FOR CONSTRUCTION</span><span>${TODAY}</span></div>`;
+
+  // Show in overlay
+  document.getElementById('detail-content').innerHTML=html;
+  document.getElementById('detail-overlay').style.display='block';
+  document.getElementById('detail-overlay').scrollTop=0;
+
+  // Also populate print-area for Print/Save PDF button
+  document.getElementById('print-area').innerHTML=html;
+}
+// ═══ SHORING WALL ════════════════════════════════════════════
+function swHint(){
+  const note='τ_a (kN/m) = unit bond stress (kPa) × π·d_h. CFEM Table 9.1.';
+  const h={
+    sand:'Typical τ_a: Sand/gravel 30–90 kN/m  |  '+note,
+    clay:'Typical τ_a: Clay 15–45 kN/m  |  '+note,
+    till:'Typical τ_a: Glacial till 65–180 kN/m  |  '+note,
+    rock:'Typical τ_a: Rock 130–450 kN/m  |  '+note
+  };
+  const el=document.getElementById('sw-hint');
+  if(el)el.textContent=h[document.getElementById('sw-soil').value];
+}
+document.getElementById('sw-soil').addEventListener('change',swHint);
+
+function swPreview(){
+  const H_=parseFloat(document.getElementById('sw-H').value)||8;
+  const smax_=parseFloat(document.getElementById('sw-smax').value)||2.5;
+  const d1min_=parseFloat(document.getElementById('sw-d1min').value)||1.5;
+  const hbmin_=parseFloat(document.getElementById('sw-hbmin').value)||1.5;
+  const fL=UNITS==='IMP'?1/C.len:1;
+  const H_si=H_*fL, smax_si=smax_*fL, d1_si=d1min_*fL, hb_si=hbmin_*fL;
+  const Hav=H_si-d1_si-hb_si;
+  if(Hav<=0){document.getElementById('sw-auto-preview').textContent='⚠ H too small for constraints';return;}
+  const nS=Math.ceil(Hav/smax_si);
+  const sv_si=Hav/nS;
+  const hb_act=H_si-d1_si-(nS-1)*sv_si;
+  const dU=UNITS==='IMP'?C.len:1;
+  document.getElementById('sw-auto-preview').textContent=
+    `→ ${nS} row${nS>1?'s':''} | Row 1 at ${(d1_si*dU).toFixed(2)} ${UL[UNITS].len} | Spacing ${(sv_si*dU).toFixed(2)} ${UL[UNITS].len} | Bottom ${(hb_act*dU).toFixed(2)} ${UL[UNITS].len}`;
+}
+['sw-H','sw-smax','sw-d1min','sw-hbmin'].forEach(id=>{
+  const el=document.getElementById(id);
+  if(el) el.addEventListener('input',swPreview);
+});
+swPreview();
+
+function calcShoring(){
+  // ── inputs (all in SI internally) ──
+  const H     = siLen('sw-H');
+  const smax  = siLen('sw-smax');   // max unsupported span
+  const d1min = siLen('sw-d1min');  // min depth to first row
+  const hbmin = siLen('sw-hbmin'); // min clearance at bottom
+  const sh    = siLen('sw-sh');
+
+  // ── AUTO-DESIGN: place rows to satisfy max unsupported span ──
+  // Available height for anchors = H - d1min - hbmin
+  // Number of spans = ceil((H - d1min - hbmin) / smax) + 1
+  // Distribute evenly
+  const Havail = H - d1min - hbmin;
+  if(Havail <= 0){
+    alert('Excavation depth too small for given constraints.');return;
+  }
+  const nSpans = Math.ceil(Havail / smax);  // spans between d1 and last anchor
+  const nR     = nSpans;                    // number of anchor rows = number of spans
+  const sv     = Havail / nSpans;           // actual vertical spacing
+  const d1     = d1min;
+  const hb     = H - d1 - (nR-1)*sv;       // actual bottom clearance
+
+  // Update preview
+  const prev = document.getElementById('sw-auto-preview');
+  if(prev) prev.textContent = `Auto: ${nR} row${nR>1?'s':''} | Row 1 at ${dl(d1).toFixed(2)} ${U('len')} | Spacing ${dl(sv).toFixed(2)} ${U('len')} | Bottom clearance ${dl(hb).toFixed(2)} ${U('len')}`;
+  const alpha= raw('sw-alpha') * Math.PI/180;
+  const phi  = raw('sw-phi');
+  const c    = siP('sw-c');
+  const gam  = siUW('sw-gam');
+  const wt   = siLen('sw-wt');   // depth to WT (999 = dry)
+  const q    = siP('sw-q');
+  // τ_a in kN/m (linear bond resistance per metre of bond length)
+  // τ_a [kN/m] = unit bond pressure [kPa] × drill hole circumference [π·d_h]
+  // Reading directly as kN/m — no need to multiply by π·d_h separately
+  const tau_linear = UNITS==='IMP' ? raw('sw-tau')/C.fl : raw('sw-tau');  // kN/m in SI
+  const dh   = raw('sw-dh')/1000;
+  const FSb  = raw('sw-FSb');
+  const Lfmin= siLen('sw-Lfmin');
+
+  const phiR = phi*Math.PI/180;
+  const Ka   = Math.pow(Math.tan(Math.PI/4 - phiR/2), 2);
+  const gamW = 9.81; // kN/m³
+
+  // Geometry is computed automatically — no validation needed
+
+  // Anchor row depths
+  const rowDepths = [];
+  for(let i=0;i<nR;i++) rowDepths.push(d1 + i*sv);
+
+  // Failure plane angle from horizontal = 45 + phi/2
+  // Free length: perpendicular distance from wall face to Rankine failure plane
+  // Failure plane starts at bottom of excavation
+  // Along anchor at angle alpha below horizontal:
+  // The Rankine failure plane from subgrade at angle (45+phi/2) from horizontal
+  // Free length = distance from wall face along anchor to intersection with failure plane
+  // For anchor at depth z_a, subgrade at H:
+  // Failure plane: x = (H - z_a) / tan(45+phi/2) measured from base of wall
+  // Free length along anchor = x / cos(alpha)  (horizontal distance / cos(incline))
+
+  const failAng = Math.PI/4 + phiR/2; // failure plane angle from horizontal
+
+  // Pressure at depth z (accounting for water table)
+  function sigma_a(z){
+    let sig = Ka*(gam*Math.min(z,wt) + (z>wt?gamW*(z-wt):0) + q) - 2*c*Math.sqrt(Ka);
+    // pore pressure contribution
+    if(z>wt) sig += Ka*gamW*(z-wt); // already in gam below WT? No — use buoyant above separately
+    // Simplified: effective stress approach
+    // sig_v_eff = gam*min(z,wt) + (gam-gamW)*(z-wt if z>wt else 0)
+    const gamEff = gam - gamW;
+    const sigV = z<=wt ? gam*z : gam*wt + gamEff*(z-wt);
+    return Math.max(0, Ka*(sigV+q) - 2*c*Math.sqrt(Ka));
+  }
+  function poreP(z){ return z>wt ? gamW*(z-wt) : 0; }
+  function totalLateral(z){ return sigma_a(z) + (z>wt?poreP(z):0); }
+
+  // Total active force (numerical integration)
+  const N=200;
+  let Pa_total=0;
+  for(let i=0;i<N;i++){
+    const z1=i/N*H, z2=(i+1)/N*H;
+    Pa_total += (totalLateral(z1)+totalLateral(z2))/2*(z2-z1);
+  }
+
+  // ── EQUAL LOAD DISTRIBUTION: Pa_total / nR anchors per metre ──
+  // Total horizontal load on wall per unit run = Pa_total (kN/m)
+  // Each anchor takes an equal share, spaced sh apart horizontally
+  const TH_each     = Pa_total * sh / nR;           // horizontal load per anchor (kN)
+  const Td_each     = TH_each / Math.cos(alpha);    // design load along anchor (kN)
+  const Proof_each  = 1.33 * Td_each;               // proof test load (CFEM §9.5.4)
+  const Perf_each   = 1.50 * Td_each;               // performance test load
+  const Qult_req    = Td_each * FSb;                // required Q_ult per anchor
+  const Lb_each     = Qult_req / tau_linear;         // bond length L_b = Q_ult / τ_a [kN/m]
+  const Qallow_each = tau_linear * Lb_each / FSb;   // = Td_each (by definition)
+
+  // Free length differs per row (depends on depth to failure plane)
+  const rows = [];
+  for(let i=0;i<nR;i++){
+    const zA     = rowDepths[i];
+    const Lf_geom = (H - zA) / Math.tan(failAng) / Math.cos(alpha);
+    const Lf      = Math.max(Lf_geom, Lfmin);
+    const Lt      = Lf + Lb_each;
+    rows.push({row:i+1, depth:zA, TH:TH_each, Td:Td_each, Proof:Proof_each, Perf:Perf_each, Lf, Lb:Lb_each, Lt, Qallow:Qallow_each});
+  }
+  // Use deepest row free length as governing (longest anchor = controls)
+  const Lf_max = Math.max(...rows.map(r=>r.Lf));
+  const Lf_min_row = Math.min(...rows.map(r=>r.Lf));
+
+  // ── update UI ──
+  set('sw-kaline',`Ka = ${Ka.toFixed(4)} (φ′=${phi}°, Rankine) | Total Pa = ${dfl(Pa_total).toFixed(1)} ${U('fl')}`);
+  set('sw-paline',
+    `Pa = ${dfl(Pa_total).toFixed(1)} ${U('fl')}  |  ` +
+    `T_design = ${df(Td_each).toFixed(1)} ${U('f')} (all rows)  |  ` +
+    `Proof load = ${df(Proof_each).toFixed(1)} ${U('f')} (×1.33)  |  ` +
+    `Perf. load = ${df(Perf_each).toFixed(1)} ${U('f')} (×1.50)  |  ` +
+    `Bond L = ${dl(Lb_each).toFixed(2)} ${U('len')} (uniform)`
+  );
+
+  const tbody = document.getElementById('sw-tbody');
+  tbody.innerHTML = '';
+  rows.forEach(r=>{
+    const tr=document.createElement('tr');
+    tr.style.background=r.row%2===0?'#f5f4f0':'#fff';
+    tr.innerHTML=`
+      <td style="padding:5px 8px;border:1px solid var(--border);font-weight:bold;color:var(--accent);">R${r.row}</td>
+      <td style="padding:5px 8px;border:1px solid var(--border);text-align:center;">${dl(r.depth).toFixed(2)}</td>
+      <td style="padding:5px 8px;border:1px solid var(--border);text-align:center;font-weight:bold;">${df(r.Td).toFixed(1)}</td>
+      <td style="padding:5px 8px;border:1px solid var(--border);text-align:center;color:#8B4513;">${df(r.Proof).toFixed(1)}</td>
+      <td style="padding:5px 8px;border:1px solid var(--border);text-align:center;">${dl(r.Lf).toFixed(2)}</td>
+      <td style="padding:5px 8px;border:1px solid var(--border);text-align:center;">${dl(r.Lb).toFixed(2)}</td>
+      <td style="padding:5px 8px;border:1px solid var(--border);text-align:center;color:var(--accent);font-weight:bold;">${dl(r.Lt).toFixed(2)}</td>`;
+    tbody.appendChild(tr);
+  });
+
+  // notes
+  let notesTxt='';
+  if(wt<H) notesTxt+=`Water table at ${dl(wt).toFixed(1)} ${U('len')} — hydrostatic pressure included in lateral load. `;
+  if(c>0){
+    const zc=2*c/(gam*Math.sqrt(Ka));
+    notesTxt+=`Tension crack z_c=${dl(zc).toFixed(2)} ${U('len')} — ignored conservatively (full height used). `;
+  }
+  notesTxt+=`Equal load distribution: Pa = ${dfl(Pa_total).toFixed(1)} ${U('fl')} ÷ ${nR} rows = ${df(TH_each).toFixed(1)} ${U('f')}/anchor. Bond L = ${dl(Lb_each).toFixed(2)} ${U('len')} (uniform all rows). Free L varies by row depth (min: ${dl(Lf_min_row).toFixed(2)}, max: ${dl(Lf_max).toFixed(2)} ${U('len')}). CFEM §9.5.3 min = ${dl(Lfmin).toFixed(1)} ${U('len')}.`;
+  set('sw-notes', notesTxt);
+
+  // ── CALCULATION STEPS ──────────────────────────────────────
+  const failDeg = (45 + phi/2).toFixed(1);
+  const zc_val  = (c > 0 && phi > 0) ? 2*c/(gam*Math.sqrt(Ka)) : 0;
+
+  // Sample pressure at key depths for display
+  function fmtP(v){ return dp(v).toFixed(2)+' '+U('p'); }
+  function fmtL(v){ return dl(v).toFixed(2)+' '+U('len'); }
+  function fmtF(v){ return df(v).toFixed(1)+' '+U('f'); }
+  function fmtFL(v){ return dfl(v).toFixed(2)+' '+U('fl'); }
+
+  // Build steps text
+  let steps = '';
+
+  steps += '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n';
+  steps += 'STEP 1 — GEOMETRY (AUTO-DESIGNED)\n';
+  steps += '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n';
+  steps += `  Excavation depth          H      = ${fmtL(H)}\n`;
+  steps += `  Max unsupported span      s_max  = ${fmtL(smax)}\n`;
+  steps += `  Min depth to Row 1        d1_min = ${fmtL(d1min)}\n`;
+  steps += `  Min bottom clearance      hb_min = ${fmtL(hbmin)}\n`;
+  steps += `\n`;
+  steps += `  Available height = H − d1_min − hb_min\n`;
+  steps += `                   = ${fmtL(H)} − ${fmtL(d1min)} − ${fmtL(hbmin)} = ${fmtL(H-d1min-hbmin)}\n`;
+  steps += `\n`;
+  steps += `  No. of spans     = ⌈Havail / s_max⌉ = ⌈${dl(H-d1min-hbmin).toFixed(2)} / ${dl(smax).toFixed(2)}⌉ = ${nR}\n`;
+  steps += `  No. of rows      = ${nR}\n`;
+  steps += `  Actual spacing   = Havail / spans = ${fmtL(H-d1min-hbmin)} / ${nR} = ${fmtL(sv)}\n`;
+  steps += `  Row depths       = ${rowDepths.map((d,i)=>'R'+(i+1)+': '+fmtL(d)).join('  ')}\n`;
+  steps += `  Bottom clearance = H − d1 − (nR−1)×sv = ${fmtL(hb)}\n`;
+
+  steps += '\n';
+  steps += '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n';
+  steps += 'STEP 2 — ACTIVE EARTH PRESSURE (RANKINE 1857)\n';
+  steps += '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n';
+  steps += `  φ′ = ${phi}°   c′ = ${fmtP(c)}   γ = ${(UNITS==='IMP'?gam*C.uw:gam).toFixed(1)} ${U('uw')}   q = ${fmtP(q)}\n`;
+  if(wt < H) steps += `  Water table at ${fmtL(wt)} — buoyant unit weight below WT\n`;
+  steps += `\n`;
+  steps += `  Ka = tan²(45 − φ′/2)\n`;
+  steps += `     = tan²(45 − ${phi}/2) = tan²(${(45-phi/2).toFixed(2)}°)\n`;
+  steps += `     = ${Ka.toFixed(4)}\n`;
+  if(zc_val > 0){
+    steps += `\n`;
+    steps += `  Tension crack  zc = 2c′ / (γ·√Ka)\n`;
+    steps += `                    = 2×${fmtP(c)} / (${(UNITS==='IMP'?gam*C.uw:gam).toFixed(1)}×√${Ka.toFixed(4)})\n`;
+    steps += `                    = ${fmtL(zc_val)}  (ignored — full height used conservatively)\n`;
+  }
+  steps += `\n`;
+  steps += `  Lateral pressure at key depths (effective stress + pore pressure):\n`;
+  steps += `  Depth (${U('len')})   σ_v,eff (${U('p')})    u (${U('p')})     σ_a+u (${U('p')})\n`;
+  steps += `  ${'─'.repeat(58)}\n`;
+  const depthPts = [0, ...rowDepths, H];
+  depthPts.forEach(z => {
+    const gamEff = gam - 9.81;
+    const sigV   = z <= wt ? gam*z : gam*wt + gamEff*(z-wt);
+    const u      = z > wt ? 9.81*(z-wt) : 0;
+    const sa     = Math.max(0, Ka*(sigV+q) - 2*c*Math.sqrt(Ka));
+    const tot    = sa + u;
+    steps += `  ${dl(z).toFixed(2).padStart(8)}      ${dp(sigV).toFixed(2).padStart(10)}    ${dp(u).toFixed(2).padStart(8)}    ${fmtP(tot).padStart(10)}\n`;
+  });
+  steps += `\n`;
+  steps += `  Total active force (numerical integration over H):\n`;
+  steps += `  Pa = ∫₀ᴴ σ_h(z) dz = ${fmtFL(Pa_total)}  (per unit run of wall)\n`;
+
+  steps += '\n';
+  steps += '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n';
+  steps += 'STEP 3 — ANCHOR LOAD (EQUAL DISTRIBUTION)\n';
+  steps += '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n';
+  steps += `  Horizontal spacing  s_h = ${fmtL(sh)}\n`;
+  steps += `  Anchor inclination  α   = ${raw('sw-alpha')}°\n`;
+  steps += `  Number of rows      nR  = ${nR}\n`;
+  steps += `\n`;
+  steps += `  Total horiz. load per anchor spacing:\n`;
+  steps += `  T_H,total = Pa × s_h = ${fmtFL(Pa_total)} × ${fmtL(sh)} = ${fmtF(Pa_total*sh)}\n`;
+  steps += `\n`;
+  steps += `  Distributed equally across all rows:\n`;
+  steps += `  T_H (each) = T_H,total / nR = ${fmtF(Pa_total*sh)} / ${nR} = ${fmtF(TH_each)}\n`;
+  steps += `\n`;
+  steps += `  Design load along anchor axis:\n`;
+  steps += `  T_design = T_H / cos(α) = ${fmtF(TH_each)} / cos(${raw('sw-alpha')}°)\n`;
+  steps += `           = ${fmtF(TH_each)} / ${Math.cos(alpha).toFixed(4)} = ${fmtF(Td_each)}\n`;
+
+  steps += '\n';
+  steps += '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n';
+  steps += 'STEP 4 — BOND LENGTH (UNIFORM ALL ROWS)\n';
+  steps += '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n';
+  steps += `  τ_a = ${(UNITS==='IMP'?tau_linear*C.fl:tau_linear).toFixed(1)} ${U('fl')}   d_h = ${(raw('sw-dh')).toFixed(0)} mm   FS = ${FSb}\n`;
+  steps += `  Note: τ_a (kN/m) = unit bond pressure (kPa) × drill hole circumference (π·d_h)\n`;
+  steps += `\n`;
+  steps += `  Required Q_ult = T_design × FS\n`;
+  steps += `                 = ${fmtF(Td_each)} × ${FSb} = ${fmtF(Qult_req)}\n`;
+  steps += `\n`;
+  steps += `  Bond length:\n`;
+  steps += `  L_b = Q_ult / τ_a = ${fmtF(Qult_req)} / ${(UNITS==='IMP'?tau_linear*C.fl:tau_linear).toFixed(2)} ${U('fl')}\n`;
+  steps += `      = ${fmtL(Lb_each)}   ← same for all rows\n`;
+  steps += `\n`;
+  steps += `  Test loads (CFEM §9.5.4):\n`;
+  steps += `  Design load       = ${fmtF(Td_each)}\n`;
+  steps += `  Proof test load   = 1.33 × T_design = ${fmtF(Proof_each)}\n`;
+  steps += `  Perf. test load   = 1.50 × T_design = ${fmtF(Perf_each)}\n`;
+  steps += `\n`;
+  steps += `  Capacity check:\n`;
+  steps += `  Q_allow = τ_a × L_b / FS = ${fmtF(Qallow_each)} ≥ T_design = ${fmtF(Td_each)}  ✓\n`;
+  steps += `  Ref: CFEM 4th Ed. §9.5.2, Eq. 9.5; FHWA-NHI-14-007 §5.3.1\n`;
+
+  steps += '\n';
+  steps += '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n';
+  steps += 'STEP 5 — FREE LENGTH (PER ROW — RANKINE FAILURE PLANE)\n';
+  steps += '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n';
+  steps += `  Failure plane angle = 45 + φ′/2 = 45 + ${phi}/2 = ${failDeg}° from horizontal\n`;
+  steps += `  Failure plane starts at subgrade (z = H = ${fmtL(H)})\n`;
+  steps += `\n`;
+  steps += `  For anchor at depth z_a:\n`;
+  steps += `  Horizontal dist to failure plane = (H − z_a) / tan(${failDeg}°)\n`;
+  steps += `  L_f,geom (along anchor) = horiz dist / cos(α)\n`;
+  steps += `  L_f = max(L_f,geom,  ${fmtL(Lfmin)} min)  ← CFEM §9.5.3\n`;
+  steps += `\n`;
+  steps += `  Row   Depth    (H−z)/tan(${failDeg}°)   L_f,geom    L_f (applied)\n`;
+  steps += `  ${'─'.repeat(62)}\n`;
+  rows.forEach(r => {
+    const hDist = (H - r.depth) / Math.tan(failAng);
+    const lfGeom = hDist / Math.cos(alpha);
+    steps += `  R${r.row}    ${fmtL(r.depth).padEnd(10)}  ${fmtL(hDist).padEnd(14)} ${fmtL(lfGeom).padEnd(12)} ${fmtL(r.Lf)}${r.Lf === Lfmin ? '  (min governs)' : ''}\n`;
+  });
+
+  steps += '\n';
+  steps += '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n';
+  steps += 'STEP 6 — TOTAL ANCHOR LENGTH SUMMARY\n';
+  steps += '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n';
+  steps += `  Total L = Free L + Bond L\n\n`;
+  steps += `  Row   Depth      Free L     Bond L     Total L\n`;
+  steps += `  ${'─'.repeat(54)}\n`;
+  rows.forEach(r => {
+    steps += `  R${r.row}    ${fmtL(r.depth).padEnd(10)} ${fmtL(r.Lf).padEnd(10)} ${fmtL(r.Lb).padEnd(10)} ${fmtL(r.Lt)}\n`;
+  });
+  steps += `\n`;
+  steps += `  T_design   = ${fmtF(Td_each)} (all rows)\n`;
+  steps += `  Proof load = ${fmtF(Proof_each)} = 1.33 × T_design  (CFEM §9.5.4)\n`;
+  steps += `  Perf. load = ${fmtF(Perf_each)} = 1.50 × T_design\n`;
+  steps += `  Q_allow    = ${fmtF(Qallow_each)} (all rows)\n`;
+  steps += `  Bond L     = ${fmtL(Lb_each)} (all rows)\n`;
+
+  const stepsEl = document.getElementById('sw-steps');
+  if(stepsEl) stepsEl.textContent = steps;
+
+  // draw diagram
+  drawShoring('sw-canvas', H, rowDepths, rows, phi, wt, dh, alpha*180/Math.PI);
+
+  show('sw-res');
+  ena('sw-pdf');
+  R.shoring={H,smax,d1min,hbmin,nR,d1,sv,hb,sh,alpha:raw('sw-alpha'),phi,c,gam,wt,q,tau_linear,dh,FSb,Lfmin,Ka,Pa_total,rows,
+             soil:document.getElementById('sw-soil').value};
+}
+
+function drawShoring(id, H, rowDepths, rows, phi, wt, dh, alphaDeg){
+  const canvas=document.getElementById(id); if(!canvas)return;
+  const ctx=canvas.getContext('2d');
+  const W=canvas.width, CH=canvas.height;
+  ctx.clearRect(0,0,W,CH);
+  ctx.fillStyle='#fafaf8'; ctx.fillRect(0,0,W,CH);
+
+  const PAD={t:20,r:20,b:30,l:20};
+  const wallX = 100;  // wall face x position
+  const scaleY = (CH-PAD.t-PAD.b)/H;  // px per meter
+  const scaleX = (W-wallX-PAD.r)/Math.max(...rows.map(r=>r.Lt),4)*0.85;
+
+  function ypx(depth){ return PAD.t + depth*scaleY; }
+  function xpx(dist) { return wallX + dist*scaleX; }
+
+  // ── Retained soil (left of wall) ──
+  ctx.fillStyle='#e8dfc0';
+  ctx.fillRect(0, PAD.t, wallX, H*scaleY);
+
+  // ── Water table ──
+  if(wt<H){
+    ctx.fillStyle='rgba(100,160,220,0.18)';
+    ctx.fillRect(0, ypx(wt), wallX, (H-wt)*scaleY);
+    ctx.strokeStyle='#5588cc'; ctx.lineWidth=1; ctx.setLineDash([4,3]);
+    ctx.beginPath(); ctx.moveTo(0,ypx(wt)); ctx.lineTo(wallX,ypx(wt)); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle='#5588cc'; ctx.font='8px Arial'; ctx.textAlign='left';
+    ctx.fillText('WT',3,ypx(wt)-3);
+  }
+
+  // ── Excavation side (right of wall, above subgrade) ──
+  ctx.fillStyle='#f0ede4';
+  ctx.fillRect(wallX, PAD.t, W-wallX-PAD.r, H*scaleY);
+
+  // ── Subgrade line ──
+  ctx.strokeStyle='#8B6914'; ctx.lineWidth=2; ctx.setLineDash([]);
+  ctx.beginPath(); ctx.moveTo(wallX,ypx(H)); ctx.lineTo(W-PAD.r,ypx(H)); ctx.stroke();
+
+  // ── Rankine failure plane ──
+  const failAng = 45 + phi/2; // degrees from horizontal
+  const failSlope = Math.tan((90-failAng)*Math.PI/180); // rise/run
+  ctx.strokeStyle='#c0392b'; ctx.lineWidth=1.2; ctx.setLineDash([5,4]);
+  ctx.beginPath(); ctx.moveTo(wallX, ypx(H));
+  // extend up and to the left into retained soil
+  const failX = wallX - H/Math.tan(failAng*Math.PI/180)*scaleX*0.6;
+  ctx.lineTo(Math.max(0,failX), PAD.t);
+  ctx.stroke(); ctx.setLineDash([]);
+  // label
+  ctx.fillStyle='#c0392b'; ctx.font='7.5px Arial'; ctx.textAlign='left';
+  ctx.fillText(`Rankine (45+φ/2=${failAng.toFixed(0)}°)`,3,PAD.t+10);
+
+  // ── Wall ──
+  ctx.fillStyle='#4a4a4a';
+  ctx.fillRect(wallX-8, PAD.t-4, 8, H*scaleY+8);
+  // hatching on retained side
+  ctx.strokeStyle='#6b6860'; ctx.lineWidth=0.5;
+  for(let i=0;i<10;i++){
+    const y=PAD.t + i*(H*scaleY/9);
+    ctx.beginPath(); ctx.moveTo(wallX-8,y); ctx.lineTo(wallX-16,y+10); ctx.stroke();
+  }
+
+  // ── Depth labels ──
+  ctx.fillStyle='#333'; ctx.font='8px Courier New'; ctx.textAlign='right';
+  [0,...rowDepths,H].forEach(d=>{
+    ctx.fillText(dl(d).toFixed(1),wallX-12,ypx(d)+3);
+    ctx.strokeStyle='#bbb'; ctx.lineWidth=0.4;
+    ctx.beginPath(); ctx.moveTo(wallX-10,ypx(d)); ctx.lineTo(wallX,ypx(d)); ctx.stroke();
+  });
+
+  // ── Anchors ──
+  const alphaR = alphaDeg*Math.PI/180;
+  rows.forEach((r,i)=>{
+    const ay = ypx(r.depth);
+    const freeEndX = xpx(r.Lf*Math.cos(alphaR));
+    const freeEndY = ay + r.Lf*Math.sin(alphaR)*scaleY;
+    const bondEndX = xpx(r.Lt*Math.cos(alphaR));
+    const bondEndY = ay + r.Lt*Math.sin(alphaR)*scaleY;
+
+    // free length — dashed
+    ctx.strokeStyle='#2d5a3d'; ctx.lineWidth=1.8; ctx.setLineDash([5,3]);
+    ctx.beginPath(); ctx.moveTo(wallX,ay); ctx.lineTo(freeEndX,freeEndY); ctx.stroke();
+
+    // bond length — solid thick
+    ctx.strokeStyle='#2d5a3d'; ctx.lineWidth=3.5; ctx.setLineDash([]);
+    ctx.beginPath(); ctx.moveTo(freeEndX,freeEndY); ctx.lineTo(bondEndX,bondEndY); ctx.stroke();
+
+    // anchor head at wall
+    ctx.fillStyle='#2d5a3d';
+    ctx.beginPath(); ctx.arc(wallX,ay,4,0,Math.PI*2); ctx.fill();
+
+    // label
+    ctx.fillStyle='#1e3d2a'; ctx.font='bold 8px Arial'; ctx.textAlign='left';
+    ctx.fillText(`R${r.row}  T=${df(r.Td).toFixed(0)}${U('f')}  L=${dl(r.Lt).toFixed(1)}${U('len')}`,
+                  wallX+4, ay-5);
+  });
+  ctx.setLineDash([]);
+
+  // ── Active pressure diagram (left side) ──
+  const gamV=siUW('sw-gam'), Ka_=Math.pow(Math.tan((Math.PI/4-raw('sw-phi')*Math.PI/180/2)),2);
+  const gamW_=9.81, wt_=siLen('sw-wt'), c_=siP('sw-c'), q_=siP('sw-q');
+  function sigA(z){
+    const gamEff=gamV-gamW_;
+    const sigV=z<=wt_?gamV*z:gamV*wt_+gamEff*(z-wt_);
+    const u=z>wt_?gamW_*(z-wt_):0;
+    return Math.max(0,Ka_*(sigV+q_)-2*c_*Math.sqrt(Ka_)+u);
+  }
+  const maxSig=sigA(H);
+  const pressScale = maxSig>0 ? (wallX-20)/maxSig : 1;
+  ctx.beginPath(); ctx.moveTo(wallX,PAD.t);
+  for(let i=0;i<=40;i++){
+    const z=i/40*H, s=sigA(z);
+    ctx.lineTo(wallX-s*pressScale, ypx(z));
+  }
+  ctx.lineTo(wallX, ypx(H)); ctx.closePath();
+  ctx.fillStyle='rgba(45,90,61,0.15)'; ctx.fill();
+  ctx.strokeStyle='#2d5a3d'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(wallX,PAD.t);
+  for(let i=0;i<=40;i++){const z=i/40*H,s=sigA(z);ctx.lineTo(wallX-s*pressScale,ypx(z));}
+  ctx.stroke();
+  // max pressure label
+  ctx.fillStyle='#2d5a3d'; ctx.font='7.5px Courier New'; ctx.textAlign='right';
+  ctx.fillText(`${dp(maxSig).toFixed(1)} ${U('p')}`,wallX-maxSig*pressScale-2,ypx(H)-4);
+
+  // ── Legend ──
+  const lx=wallX+10, ly=CH-PAD.b+8;
+  ctx.strokeStyle='#2d5a3d'; ctx.lineWidth=1.5; ctx.setLineDash([4,2]);
+  ctx.beginPath(); ctx.moveTo(lx,ly); ctx.lineTo(lx+20,ly); ctx.stroke(); ctx.setLineDash([]);
+  ctx.fillStyle='#333'; ctx.font='7.5px Arial'; ctx.textAlign='left';
+  ctx.fillText('Free length',lx+23,ly+3);
+  ctx.strokeStyle='#2d5a3d'; ctx.lineWidth=3.5;
+  ctx.beginPath(); ctx.moveTo(lx+85,ly); ctx.lineTo(lx+105,ly); ctx.stroke();
+  ctx.fillText('Bond length',lx+108,ly+3);
+  ctx.strokeStyle='#c0392b'; ctx.lineWidth=1; ctx.setLineDash([4,3]);
+  ctx.beginPath(); ctx.moveTo(lx+175,ly); ctx.lineTo(lx+195,ly); ctx.stroke(); ctx.setLineDash([]);
+  ctx.fillText('Failure plane',lx+198,ly+3);
+
+  // ── Scale bar ──
+  ctx.fillStyle='#888'; ctx.font='7px Arial'; ctx.textAlign='center';
+  ctx.fillText(`Scale: 1 div = ${dl(1).toFixed(1)} ${U('len')}`, W-PAD.r-40, CH-PAD.b+8);
+}
+
+</script>
+</body>
+</html>
